@@ -1,0 +1,18 @@
+#!/bin/bash
+n=${1:?"Please specify the number of vertices"}
+mod=${2:-$(grep -c ^processor /proc/cpuinfo)} # Default with number of logical CPU cores.
+#mod=${2:-$(grep ^cpu\\scores /proc/cpuinfo | uniq |  awk '{print $4}' )} # Default with number of physical CPU cores.
+
+# Start multiple parallel instances of geng.
+for i in $(seq 1 $mod)
+do
+   let rem=$i-1
+   ./geng $n $rem/$mod -u &
+   pids[${i}]=$!
+done
+
+# Wait for all instances to complete.
+for pid in ${pids[*]}
+do
+    wait $pid
+done
