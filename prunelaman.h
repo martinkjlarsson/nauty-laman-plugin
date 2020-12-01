@@ -6,12 +6,11 @@
 #define HIGHEST_BIT(type) (~((type)-1 >> 1))
 
 #define PRUNE prunelaman
-// #define PREPRUNE preprunelaman
 
 /* Note: PLUGIN_INIT happens after validation of the input arguments in geng.c.
  * Beware of illegal argument combinations. */
 #define PLUGIN_INIT                                                         \
-    if (!gote)                                                              \
+    if (!gote && maxn > 1)                                                  \
     {                                                                       \
         geng_mine = geng_maxe = mine = maxe = EMBED_DIM * maxn - EMBED_DOF; \
     }                                                                       \
@@ -27,8 +26,9 @@ int prunelaman(graph *g, int n, int maxn)
     int nodeinds[MAXN];
     graph mask;
 
-    /* graphs with n <= EMBED_DIM+1 cannot be over-determined */
-    if (n <= EMBED_DIM + 1 && n < maxn)
+    /* subgraphs with n <= EMBED_DIM+1 cannot be overdetermined
+     * graph underdeterminedness is prevented using mine and maxe */
+    if (n <= EMBED_DIM + 1)
         return FALSE;
 
     /* find number of edges */
@@ -37,31 +37,23 @@ int prunelaman(graph *g, int n, int maxn)
         m += POPCOUNT(g[i]);
     m = m / 2;
 
-    /* graph is over-determined => not minimal */
-    if (n > EMBED_DIM + 1 && m > EMBED_DIM * n - EMBED_DOF)
+    /* subgraph is overdetermined => not minimal */
+    if (m > EMBED_DIM * n - EMBED_DOF)
         return TRUE;
 
-    if (n == maxn)
-    {
-        /* fully connected graph is rigid */
-        if (m == n * (n - 1) / 2)
-            return FALSE;
-
-        /* graph is under-determined => not rigid */
-        if (m != EMBED_DIM * n - EMBED_DOF)
-            return TRUE;
-    }
+    /* graph is underdetermined => not rigid */
+    if (n == maxn && m != EMBED_DIM * n - EMBED_DOF)
+        return TRUE;
 
     /* Go through all subgraphs to make sure m <= EMBED_DIM*n-EMBED_DOF.
      * geng constructs graphs by succesively adding more nodes. Therefore,
-     * we only need to check the subgraphs containing the new node. */
+     * we only need to check the subgraphs containing the new node. The other
+     * subgraphs have been checked in previous steps. */
     for (k = n - 1; k > EMBED_DIM + 1; --k)
     {
-        /* init subgraph with the k-1 first nodes */
+        /* init subgraph with the k-1 first nodes and the new node */
         for (i = 0; i < k - 1; ++i)
             nodeinds[i] = i;
-
-        /* always include last node */
         nodeinds[k - 1] = n - 1;
 
         subgraphsleft = TRUE;
@@ -78,7 +70,7 @@ int prunelaman(graph *g, int n, int maxn)
                 l += POPCOUNT(g[nodeinds[i]] & mask);
             l = l / 2;
 
-            /* subgraph is over-determined => not minimal */
+            /* subgraph is overdetermined => not minimal */
             if (l > EMBED_DIM * k - EMBED_DOF)
                 return TRUE;
 
@@ -100,37 +92,6 @@ int prunelaman(graph *g, int n, int maxn)
                 }
             }
         }
-    }
-    return FALSE;
-}
-
-int preprunelaman(graph *g, int n, int maxn)
-{
-    int i, j, m;
-
-    /* graphs with n <= EMBED_DIM+1 cannot be over-determined */
-    if (n <= EMBED_DIM + 1 && n < maxn)
-        return FALSE;
-
-    /* find number of edges */
-    m = 0;
-    for (i = 0; i < n; ++i)
-        m += POPCOUNT(g[i]);
-    m = m / 2;
-
-    /* graph is over-determined => not minimal */
-    if (n > EMBED_DIM + 1 && m > EMBED_DIM * n - EMBED_DOF)
-        return TRUE;
-
-    if (n == maxn)
-    {
-        /* fully connected graph is rigid */
-        if (m == n * (n - 1) / 2)
-            return FALSE;
-
-        /* graph is under-determined => not rigid */
-        if (m != EMBED_DIM * n - EMBED_DOF)
-            return TRUE;
     }
     return FALSE;
 }
