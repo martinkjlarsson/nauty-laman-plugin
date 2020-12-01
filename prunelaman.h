@@ -6,7 +6,7 @@
 #define HIGHEST_BIT(type) (~((type)-1 >> 1))
 
 #define PRUNE prunelaman
-#define PREPRUNE preprunelaman
+// #define PREPRUNE preprunelaman
 
 /* Note: PLUGIN_INIT happens after validation of the input arguments in geng.c.
  * Beware of illegal argument combinations. */
@@ -15,28 +15,54 @@
     {                                                                       \
         geng_mine = geng_maxe = mine = maxe = EMBED_DIM * maxn - EMBED_DOF; \
     }                                                                       \
-    if (!gotd)                                                              \
+    if (!gotd && maxn > EMBED_DIM)                                          \
     {                                                                       \
         geng_mindeg = mindeg = EMBED_DIM;                                   \
     }
 
 int prunelaman(graph *g, int n, int maxn)
 {
-    int i, j, k, l;
+    int i, j, k, l, m;
     int subgraphsleft;
-    int nodeinds[MAXN] = {0};
+    int nodeinds[MAXN];
     graph mask;
 
-    /* subgraphs are dealt with in pre-pruning */
-    if (n < maxn)
+    /* graphs with n <= EMBED_DIM+1 cannot be over-determined */
+    if (n <= EMBED_DIM + 1 && n < maxn)
         return FALSE;
 
-    /* go through all subgraphs of size k to make sure m <= EMBED_DIM*n-EMBED_DOF */
+    /* find number of edges */
+    m = 0;
+    for (i = 0; i < n; ++i)
+        m += POPCOUNT(g[i]);
+    m = m / 2;
+
+    /* graph is over-determined => not minimal */
+    if (n > EMBED_DIM + 1 && m > EMBED_DIM * n - EMBED_DOF)
+        return TRUE;
+
+    if (n == maxn)
+    {
+        /* fully connected graph is rigid */
+        if (m == n * (n - 1) / 2)
+            return FALSE;
+
+        /* graph is under-determined => not rigid */
+        if (m != EMBED_DIM * n - EMBED_DOF)
+            return TRUE;
+    }
+
+    /* Go through all subgraphs to make sure m <= EMBED_DIM*n-EMBED_DOF.
+     * geng constructs graphs by succesively adding more nodes. Therefore,
+     * we only need to check the subgraphs containing the new node. */
     for (k = n - 1; k > EMBED_DIM + 1; --k)
     {
-        /* init subgraph with the k first nodes */
-        for (i = 0; i < k; ++i)
+        /* init subgraph with the k-1 first nodes */
+        for (i = 0; i < k - 1; ++i)
             nodeinds[i] = i;
+
+        /* always include last node */
+        nodeinds[k - 1] = n - 1;
 
         subgraphsleft = TRUE;
         while (subgraphsleft)
@@ -57,7 +83,7 @@ int prunelaman(graph *g, int n, int maxn)
                 return TRUE;
 
             /* go to next subgraph */
-            for (i = k - 1; i >= 0; --i)
+            for (i = k - 2; i >= 0; --i)
             {
                 nodeinds[i]++;
                 if (nodeinds[i] >= n + i - k + 1)
@@ -68,7 +94,7 @@ int prunelaman(graph *g, int n, int maxn)
                 }
                 else
                 {
-                    for (j = i + 1; j < k; ++j)
+                    for (j = i + 1; j < k - 1; ++j)
                         nodeinds[j] = nodeinds[i] - i + j;
                     break;
                 }
