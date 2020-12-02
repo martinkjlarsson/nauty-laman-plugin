@@ -6,9 +6,10 @@ mod=${2:-$(grep -c ^processor /proc/cpuinfo)} # Default with number of logical C
 # Start multiple parallel instances of geng.
 for i in $(seq 1 $mod)
 do
-   let rem=$i-1
-   ./geng $n $rem/$mod -u &
-   pids[${i}]=$!
+    let rem=$i-1
+    let x=1000*$mod
+    ./geng $n $rem/$mod -x${x}X1 -u &
+    pids[${i}]=$!
 done
 
 # Wait for all instances to complete.
