@@ -7,12 +7,12 @@ A plugin for the `geng` program provided with [Nauty](http://pallini.di.uniroma1
 3. `geng` has to be rebuilt with the flag `-D'PLUGIN="prunelaman.h"'` to inject the plugin. Add the flag, for example, by manually editing the `makefile` and then rebuild `geng` (e.g. `rm -f geng && make geng`).
 
 ## Execution time
-The table below shows the execution time when counting the number of Laman graphs for various number of vertices n. The time was measured running on a single core as well as on 6 cores/12 threads of an Intel® Core™ i7-6800K CPU @ 3.40GHz.
-n                     | 1 | 2 | 3 | 4 | 5 |  6 |  7 |  8  |   9   |    10   |     11    |     12     |        13       |
-----------------------|:-:|:-:|:-:|:-:|:-:|:--:|:--:|:---:|:-----:|:-------:|:---------:|:----------:|:---------------:|
-\# Laman graphs       | 1 | 1 | 1 | 1 | 3 | 13 | 70 | 608 | 7 222 | 110 132 | 2 039 273 | 44 176 717 |  1 092 493 042  |
-Exec. time (1 core)   |   |   |   |   |   |    |    |       | 60 ms | 820 ms |   28 s   |   21 min   | *Not measured*  |
-Exec. time (12 cores) |   |   |   |   |   |    |    |       | 30 ms | 220 ms |   4.4 s  |  3.1 min   |      2.6 h      |
+The table below shows the execution time when counting the number of Laman graphs for various number of vertices n. The time was measured running on a single core as well as on 6 cores/12 threads of an Intel® Core™ i7-6800K CPU @ 3.40GHz. The number of Laman graphs for n=1..13 can be found in the OEIS entry [A227117](https://oeis.org/A227117).
+n                     |   9   |    10   |     11    |     12     |        13       |
+----------------------|:-----:|:-------:|:---------:|:----------:|:---------------:|
+\# Laman graphs       | 7 222 | 110 132 | 2 039 273 | 44 176 717 |  1 092 493 042  |
+Exec. time (1 core)   | 60 ms |  820 ms |    28 s   |    21 min  | *Not measured*  |
+Exec. time (12 cores) | 30 ms |  220 ms |   4.4 s   |   3.1 min  |      2.6 h      |
 
 ## Examples
 
