@@ -1,14 +1,20 @@
+/* Copyright (c) 2020 Martin Larsson */
 
-/* Add this flag when compiling: -D'PLUGIN="prunelaman.h"' */
+/* Add this flag when compiling geng: -D'PLUGIN="prunelaman.h"' */
 
+/* Note: This code, i.e., the Laman conditions, only works propertly for
+ * embeddings in the plane. For higher dimensions this code will also generate
+ * graphs that are not minimally rigid, e.g., the double-banana graph in 3D. */
 #define EMBED_DIM 2
 #define EMBED_DOF (EMBED_DIM * (EMBED_DIM + 1) / 2)
 #define FIRST_NODE (~((graph)-1 >> 1))
 #define FIRST_NODES(n) (~((graph)-1 >> (n)))
-#define FIRST_TWO_NODES FIRST_NODES(2)
 #define NTH_NODE(n) (FIRST_NODE >> (n))
 
 #define PRUNE prunelaman
+
+/* Uncomment to enable status reports to stderr. This will disable any other
+ * output options -uyngs. */
 // #define OUTPROC countgraphs
 
 /* Note: PLUGIN_INIT happens after validation of the input arguments in geng.c.
@@ -25,11 +31,14 @@
 
 static nauty_counter total_number_of_graphs = 0;
 
+/* If OUTPROC is defined as above, this gets called whenever a new graph has
+ * been generated. Instead of outputting to file this procedure simply counts
+ * the graphs and provides a status report every now and then. */
 void countgraphs(FILE *f, graph *g, int n)
 {
     ++total_number_of_graphs;
-    /* report on every 2^30 ≈ 10^9 graph ≈ every hour */
-    if ((total_number_of_graphs & (1 << 30) - 1) == 0)
+    /* report on every 2^28 graph ≈ every hour */
+    if ((total_number_of_graphs & (1 << 28) - 1) == 0)
     {
         fprintf(stderr, ">A " COUNTER_FMT " graphs generated\n",
                 total_number_of_graphs);
@@ -37,6 +46,7 @@ void countgraphs(FILE *f, graph *g, int n)
     }
 }
 
+/* Pruning step that gets called whenever a new graph or subgraph is generated. */
 int prunelaman(graph *g, int n, int maxn)
 {
     int i, j, k, l, m;
@@ -94,7 +104,7 @@ int prunelaman(graph *g, int n, int maxn)
                 if (nodeinds[i] < n + i - k)
                 {
                     l -= POPCOUNT(g[nodeinds[i]] & mask);
-                    mask ^= FIRST_TWO_NODES >> nodeinds[i];
+                    mask ^= FIRST_NODES(2) >> nodeinds[i];
                     ++nodeinds[i];
                     l += POPCOUNT(g[nodeinds[i]] & mask);
 
@@ -108,11 +118,9 @@ int prunelaman(graph *g, int n, int maxn)
                     }
                     break;
                 }
-                else
+                else if (i == 0)
                 {
-                    /* wrap, continue and increase next index */
-                    if (i == 0)
-                        subgraphsleft = FALSE;
+                    subgraphsleft = FALSE;
                 }
             }
         }

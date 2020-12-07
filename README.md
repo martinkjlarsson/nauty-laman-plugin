@@ -11,32 +11,32 @@ The table below shows the execution time when counting the number of Laman graph
 n                     |   9   |    10   |     11    |     12     |        13       |
 ----------------------|:-----:|:-------:|:---------:|:----------:|:---------------:|
 \# Laman graphs       | 7 222 | 110 132 | 2 039 273 | 44 176 717 |  1 092 493 042  |
-Exec. time (1 core)   | 60 ms |  820 ms |    28 s   |    21 min  | *Not measured*  |
-Exec. time (12 cores) | 30 ms |  220 ms |   4.4 s   |   3.1 min  |      2.6 h      |
+Exec. time (1 core)   | 40 ms |  440 ms |    11 s   |   7.7 min  |      6.6 h      |
+Exec. time (12 cores) | 20 ms |  140 ms |   2.1 s   |   1.3 min  |      1.1 h      |
 
 ## Examples
 
-### Count all Laman graphs on 10 vertices
-```shell
-./geng 10 -u
+### Count all Laman graphs on 11 vertices
 ```
-```shell
->A ./geng -d2D9 n=10 e=17
->Z 110132 graphs generated in 0.95 sec
+./geng 11 -u
+```
+```
+>A ./geng -d2D10 n=11 e=19
+>Z 2039273 graphs generated in 14.71 sec
 ```
 
 ### Split the work over four instances running in parallel
 ```
-./count_laman 10 4
+./count_laman 11 4
 ```
 ```
->A ./geng -X0x200d2D9 n=10 e=17 class=0/4
->A ./geng -X0x200d2D9 n=10 e=17 class=1/4
->A ./geng -X0x200d2D9 n=10 e=17 class=3/4
->A ./geng -X0x200d2D9 n=10 e=17 class=2/4
->Z 17790 graphs generated in 0.28 sec
->Z 21790 graphs generated in 0.31 sec
->Z 28070 graphs generated in 0.39 sec
->Z 42482 graphs generated in 0.48 sec
+>A ./geng -X1x4000d2D10 n=11 e=19 class=0/4
+>A ./geng -X1x4000d2D10 n=11 e=19 class=1/4
+>A ./geng -X1x4000d2D10 n=11 e=19 class=2/4
+>A ./geng -X1x4000d2D10 n=11 e=19 class=3/4
+>Z 497693 graphs generated in 8.00 sec
+>Z 490084 graphs generated in 7.85 sec
+>Z 502422 graphs generated in 8.10 sec
+>Z 549074 graphs generated in 8.36 sec
 ```
 Summing up the results from the four instances yields the same result as above.
