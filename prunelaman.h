@@ -2,7 +2,7 @@
 
 /* Add this flag when compiling geng: -D'PLUGIN="prunelaman.h"' */
 
-/* Note: This code, i.e., the Laman conditions, only works propertly for
+/* Note: This code, i.e., the Laman property, only works properly for
  * embeddings in the plane. For higher dimensions this code will also generate
  * graphs that are not minimally rigid, e.g., the double-banana graph in 3D. */
 #define EMBED_DIM 2
@@ -12,6 +12,7 @@
 #define NTH_NODE(n) (FIRST_NODE >> (n))
 
 #define PRUNE prunelaman
+// #define PRUNE prunehenneberg1
 
 /* Uncomment to enable status reports to stderr. This will disable any other
  * output options -uyngs. */
@@ -37,8 +38,8 @@ static nauty_counter total_number_of_graphs = 0;
 void countgraphs(FILE *f, graph *g, int n)
 {
     ++total_number_of_graphs;
-    /* report on every 2^28 graph ≈ every hour */
-    if ((total_number_of_graphs & (1 << 28) - 1) == 0)
+    /* report number of graphs generated approximately every hour */
+    if ((total_number_of_graphs & (1 << 40 - n) - 1) == 0)
     {
         fprintf(stderr, ">A " COUNTER_FMT " graphs generated\n",
                 total_number_of_graphs);
@@ -46,7 +47,7 @@ void countgraphs(FILE *f, graph *g, int n)
     }
 }
 
-/* Pruning step that gets called whenever a new graph or subgraph is generated. */
+/* remove graphs that do not satisfy the Laman property */
 int prunelaman(graph *g, int n, int maxn)
 {
     int i, j, k, l, m;
@@ -126,4 +127,54 @@ int prunelaman(graph *g, int n, int maxn)
         }
     }
     return FALSE;
+}
+
+/* remove graphs that cannot be constructed using Henneberg type I moves */
+int prunehenneberg1(graph *g, int n, int maxn)
+{
+    int i, m;
+    int h1left;
+    graph mask;
+
+    /* subgraphs with n <= EMBED_DIM+1 cannot be overdetermined
+     * graph underdeterminedness is prevented using mine and maxe */
+    if (n <= EMBED_DIM + 1)
+        return FALSE;
+
+    /* find number of edges */
+    m = 0;
+    for (i = 0; i < n; ++i)
+        m += POPCOUNT(g[i]);
+    m = m / 2;
+
+    /* subgraph is overdetermined => not minimal */
+    if (m > EMBED_DIM * n - EMBED_DOF)
+        return TRUE;
+
+    /* we are done with subgraphs */
+    if (n != maxn)
+        return FALSE;
+
+    /* graph is underdetermined => not rigid */
+    if (m != EMBED_DIM * n - EMBED_DOF)
+        return TRUE;
+
+    /* deconstruct graph by reversing Henneberg type I moves */
+    mask = FIRST_NODES(n);
+    h1left = TRUE;
+    while (h1left)
+    {
+        h1left = FALSE;
+        for (i = 0; i < n; ++i)
+        {
+            if (mask & NTH_NODE(i) && POPCOUNT(g[i] & mask) == EMBED_DIM)
+            {
+                mask &= ~NTH_NODE(i);
+                h1left = TRUE;
+                if (POPCOUNT(mask) <= EMBED_DIM)
+                    return FALSE;
+            }
+        }
+    }
+    return TRUE;
 }
