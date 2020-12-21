@@ -14,12 +14,12 @@ The tables below show the execution time when generating graphs for various numb
 
 ### Laman graphs
 See OEIS entry [A227117](https://oeis.org/A227117). When increasing n by one, for large n, the number of graphs increases by a factor of approximately 30 while the execution time increases by a factor of approximately 60. `geng` parallelizes well over physical cores but poorly over logical cores.
-n                     |    10   |     11    |     12     |        13       |    14 (new)    |      15 (new)     |
-----------------------|:-------:|:---------:|:----------:|:---------------:|:--------------:|:-----------------:|
-Laman graphs          | 110 132 | 2 039 273 | 44 176 717 |  1 092 493 042  | 30 322 994 747 | 932 701 249 291\* |
-Exec. time (1 core)   |  440 ms |    11 s   |   7.7 min  |      6.6 h      | *Not measured* |   *Not measured*  |
-Exec. time (6 cores)  |  180 ms |   2.5 s   |   1.4 min  |      1.2 h      | *Not measured* |   *Not measured*  |
-Exec. time (12 cores) |  140 ms |   2.1 s   |   1.3 min  |      1.1 h      |    2.5 days    |   *Not measured*  |
+n                     |     11    |     12     |        13       |    14 (new)    |      15 (new)     |
+----------------------|:---------:|:----------:|:---------------:|:--------------:|:-----------------:|
+Laman graphs          | 2 039 273 | 44 176 717 |  1 092 493 042  | 30 322 994 747 | 932 701 249 291\* |
+Exec. time (1 core)   |    11 s   |   7.7 min  |      6.6 h      | *Not measured* |   *Not measured*  |
+Exec. time (6 cores)  |   2.5 s   |   1.4 min  |      1.2 h      | *Not measured* |   *Not measured*  |
+Exec. time (12 cores) |   2.1 s   |   1.3 min  |      1.1 h      |    2.5 days    |   *Not measured*  |
 
 \* Running 128 instances of `geng` on an AMD Ryzen Threadripper 3990X 64-Core Processor for 14 days.
 
