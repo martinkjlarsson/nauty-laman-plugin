@@ -2,34 +2,60 @@
 
 /* Add this flag when compiling geng: -D'PLUGIN="prunelaman.h"' */
 
-/* Note: This code, i.e., the Laman property, only works properly for
- * embeddings in the plane. For higher dimensions this code will also generate
- * graphs that are not minimally rigid, e.g., the double-banana graph in 3D. */
-#define EMBED_DIM 2
-#define EMBED_DOF (EMBED_DIM * (EMBED_DIM + 1) / 2)
 #define FIRST_NODE (~((graph)-1 >> 1))
 #define FIRST_NODES(n) (~((graph)-1 >> (n)))
 #define NTH_NODE(n) (FIRST_NODE >> (n))
-
-#define PRUNE prunelaman
-// #define PRUNE prunehenneberg1
 
 /* Uncomment to enable status reports to stderr. This will disable any other
  * output options -uyngs. */
 // #define OUTPROC countgraphs
 
+/* Pruning function. */
+#define PRUNE (*prune)
+
+/* Parse plugin arguments. */
+#define PLUGIN_SWITCHES \
+    else SWINT('k', gotk, tightk, "geng -k") else SWINT('K', gotK, tightK, "geng -K") else SWBOOLEAN('L', henneberg1)
+
 /* Note: PLUGIN_INIT happens after validation of the input arguments in geng.c.
  * Beware of illegal argument combinations. */
-#define PLUGIN_INIT                                                         \
-    if (!gote && maxn > 1)                                                  \
-    {                                                                       \
-        geng_mine = geng_maxe = mine = maxe = EMBED_DIM * maxn - EMBED_DOF; \
-    }                                                                       \
-    if (!gotd && maxn > EMBED_DIM)                                          \
-    {                                                                       \
-        geng_mindeg = mindeg = EMBED_DIM;                                   \
+#define PLUGIN_INIT                                                       \
+    if (henneberg1)                                                       \
+    {                                                                     \
+        prune = prunehenneberg1;                                          \
+        if (!gotk)                                                        \
+            tightk = 2;                                                   \
+        if (gotK)                                                         \
+            gt_abort(">E geng: -KL are incompatible\n");                  \
+        tightK = tightk * (tightk + 1) / 2;                               \
+    }                                                                     \
+    else if (gotk)                                                        \
+    {                                                                     \
+        prune = prunetight;                                               \
+        if (!gotK)                                                        \
+            tightK = tightk * (tightk + 1) / 2;                           \
+    }                                                                     \
+    else                                                                  \
+    {                                                                     \
+        prune = nopruning;                                                \
+        if (gotK)                                                         \
+            gt_abort(">E geng: -k is required when providing -K\n");      \
+    }                                                                     \
+    if (henneberg1 || gotk)                                               \
+    {                                                                     \
+        if (!gote && maxn > 1)                                            \
+            geng_mine = geng_maxe = mine = maxe = tightk * maxn - tightK; \
+        if (!gotd && maxn > tightk)                                       \
+            geng_mindeg = mindeg = tightk;                                \
     }
 
+static int (*prune)(graph *, int, int);
+static boolean gotk = FALSE;
+static boolean gotK = FALSE;
+static boolean gotL = FALSE;
+static int tightk; /* Specifies k for (k,l)-tight graphs. */
+static int tightK; /* Specifies l for (k,l)-tight graphs. */
+static boolean henneberg1 = FALSE;
 static nauty_counter total_number_of_graphs = 0;
 
 /* If OUTPROC is defined as above, this gets called whenever a new graph has
@@ -47,17 +73,22 @@ void countgraphs(FILE *f, graph *g, int n)
     }
 }
 
-/* remove graphs that do not satisfy the Laman property */
-int prunelaman(graph *g, int n, int maxn)
+int nopruning(graph *g, int n, int maxn)
+{
+    return FALSE;
+}
+
+/* remove graphs that are not (k,l)-sparse */
+int prunetight(graph *g, int n, int maxn)
 {
     int i, j, k, l, m;
     int subgraphsleft;
     int nodeinds[MAXN];
     graph mask;
 
-    /* subgraphs with n <= EMBED_DIM+1 cannot be overdetermined
+    /* subgraphs with n <= tightk+1 cannot be overdetermined
      * graph underdeterminedness is prevented using mine and maxe */
-    if (n <= EMBED_DIM + 1)
+    if (n <= tightk + 1)
         return FALSE;
 
     /* find number of edges */
@@ -67,18 +98,14 @@ int prunelaman(graph *g, int n, int maxn)
     m = m / 2;
 
     /* subgraph is overdetermined => not minimal */
-    if (m > EMBED_DIM * n - EMBED_DOF)
+    if (m > tightk * n - tightK)
         return TRUE;
 
-    /* graph is underdetermined => not rigid */
-    if (n == maxn && m != EMBED_DIM * n - EMBED_DOF)
-        return TRUE;
-
-    /* Go through all subgraphs to make sure m <= EMBED_DIM*n-EMBED_DOF.
+    /* Go through all subgraphs to make sure m <= tightk*n-tightK.
      * geng constructs graphs by succesively adding more nodes. Therefore,
      * we only need to check the subgraphs containing the new node. The other
      * subgraphs have been checked in previous steps. */
-    for (k = n - 1; k > EMBED_DIM + 1; --k)
+    for (k = n - 1; k > tightk + 1; --k)
     {
         /* init subgraph with the k-1 first nodes and the new node */
         mask = FIRST_NODES(k - 1) | NTH_NODE(n - 1);
@@ -96,7 +123,7 @@ int prunelaman(graph *g, int n, int maxn)
         while (subgraphsleft)
         {
             /* subgraph is overdetermined => not minimal */
-            if (l > EMBED_DIM * k - EMBED_DOF)
+            if (l > tightk * k - tightK)
                 return TRUE;
 
             /* go to next subgraph */
@@ -136,9 +163,9 @@ int prunehenneberg1(graph *g, int n, int maxn)
     int h1left;
     graph mask;
 
-    /* subgraphs with n <= EMBED_DIM+1 cannot be overdetermined
+    /* subgraphs with n <= tightk+1 cannot be overdetermined
      * graph underdeterminedness is prevented using mine and maxe */
-    if (n <= EMBED_DIM + 1)
+    if (n <= tightk + 1)
         return FALSE;
 
     /* find number of edges */
@@ -148,16 +175,12 @@ int prunehenneberg1(graph *g, int n, int maxn)
     m = m / 2;
 
     /* subgraph is overdetermined => not minimal */
-    if (m > EMBED_DIM * n - EMBED_DOF)
+    if (m > tightk * n - tightK)
         return TRUE;
 
     /* we are done with subgraphs */
     if (n != maxn)
         return FALSE;
-
-    /* graph is underdetermined => not rigid */
-    if (m != EMBED_DIM * n - EMBED_DOF)
-        return TRUE;
 
     /* deconstruct graph by reversing Henneberg type I moves */
     mask = FIRST_NODES(n);
@@ -167,11 +190,11 @@ int prunehenneberg1(graph *g, int n, int maxn)
         h1left = FALSE;
         for (i = 0; i < n; ++i)
         {
-            if (mask & NTH_NODE(i) && POPCOUNT(g[i] & mask) == EMBED_DIM)
+            if (mask & NTH_NODE(i) && POPCOUNT(g[i] & mask) == tightk)
             {
                 mask &= ~NTH_NODE(i);
                 h1left = TRUE;
-                if (POPCOUNT(mask) <= EMBED_DIM)
+                if (POPCOUNT(mask) <= tightk)
                     return FALSE;
             }
         }
