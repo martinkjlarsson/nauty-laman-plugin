@@ -13,7 +13,7 @@
 
 /* Parse plugin arguments. */
 #define PLUGIN_SWITCHES \
-    else SWINT('k', gotk, tightk, "geng -k") else SWINT('K', gotK, tightK, "geng -K") else SWBOOLEAN('L', henneberg1)
+    else SWINT('K', gotK, tightk, "geng -K") else SWINT('L', gotL, tightl, "geng -L") else SWBOOLEAN('H', henneberg1)
 
 /* Note: PLUGIN_INIT happens after validation of the input arguments in geng.c.
  * Beware of illegal argument combinations. */
@@ -21,37 +21,37 @@
     if (henneberg1)                                                       \
     {                                                                     \
         prune = prunehenneberg1;                                          \
-        if (!gotk)                                                        \
+        if (!gotK)                                                        \
             tightk = 2;                                                   \
-        if (gotd || gote || gotK)                                         \
+        if (gotd || gote || gotL)                                         \
             gt_abort(">E geng: -deK are incompatible with -L\n");         \
-        tightK = tightk * (tightk + 1) / 2;                               \
+        tightl = tightk * (tightk + 1) / 2;                               \
     }                                                                     \
-    else if (gotk)                                                        \
+    else if (gotK)                                                        \
     {                                                                     \
         prune = prunetight;                                               \
-        if (!gotK)                                                        \
-            tightK = tightk * (tightk + 1) / 2;                           \
+        if (!gotL)                                                        \
+            tightl = tightk * (tightk + 1) / 2;                           \
     }                                                                     \
     else                                                                  \
     {                                                                     \
         prune = nopruning;                                                \
-        if (gotK)                                                         \
+        if (gotL)                                                         \
             gt_abort(">E geng: -k is required when providing -K\n");      \
     }                                                                     \
-    if (henneberg1 || gotk)                                               \
+    if (henneberg1 || gotK)                                               \
     {                                                                     \
         if (!gote && maxn > 1)                                            \
-            geng_mine = geng_maxe = mine = maxe = tightk * maxn - tightK; \
+            geng_mine = geng_maxe = mine = maxe = tightk * maxn - tightl; \
         if (!gotd && maxn > tightk)                                       \
             geng_mindeg = mindeg = tightk;                                \
     }
 
 static int (*prune)(graph *, int, int);
-static boolean gotk = FALSE;
 static boolean gotK = FALSE;
+static boolean gotL = FALSE;
 static int tightk; /* Specifies k for (k,l)-tight graphs. */
-static int tightK; /* Specifies l for (k,l)-tight graphs. */
+static int tightl; /* Specifies l for (k,l)-tight graphs. */
 static boolean henneberg1 = FALSE;
 static nauty_counter total_number_of_graphs = 0;
 
@@ -95,10 +95,10 @@ int prunetight(graph *g, int n, int maxn)
     m = m / 2;
 
     /* subgraph is overdetermined => not minimal */
-    if (m > tightk * n - tightK)
+    if (m > tightk * n - tightl)
         return TRUE;
 
-    /* Go through all subgraphs to make sure m <= tightk*n-tightK.
+    /* Go through all subgraphs to make sure m <= tightk*n-tightl.
      * geng constructs graphs by succesively adding more nodes. Therefore,
      * we only need to check the subgraphs containing the new node. The other
      * subgraphs have been checked in previous steps. */
@@ -120,7 +120,7 @@ int prunetight(graph *g, int n, int maxn)
         while (subgraphsleft)
         {
             /* subgraph is overdetermined => not minimal */
-            if (l > tightk * k - tightK)
+            if (l > tightk * k - tightl)
                 return TRUE;
 
             /* go to next subgraph */
@@ -169,7 +169,7 @@ int prunehenneberg1(graph *g, int n, int maxn)
     m = m / 2;
 
     /* subgraph is overdetermined => not minimal */
-    if (m > tightk * n - tightK)
+    if (m > tightk * n - tightl)
         return TRUE;
 
     /* we are done with subgraphs */
