@@ -2,9 +2,7 @@
 
 /* Add this flag when compiling geng: -D'PLUGIN="prunelaman.h"' */
 
-#define FIRST_NODE (~((graph)-1 >> 1))
-#define FIRST_NODES(n) (~((graph)-1 >> (n)))
-#define NTH_NODE(n) (FIRST_NODE >> (n))
+#define NTH_NODE(n) (bit[n]) /* Apparently lookup is faster than bitshift. */
 
 /* Uncomment to enable status reports to stderr. This will disable any other
  * output options -uyngs. */
@@ -52,7 +50,6 @@
 static int (*prune)(graph *, int, int);
 static boolean gotk = FALSE;
 static boolean gotK = FALSE;
-static boolean gotL = FALSE;
 static int tightk; /* Specifies k for (k,l)-tight graphs. */
 static int tightK; /* Specifies l for (k,l)-tight graphs. */
 static boolean henneberg1 = FALSE;
@@ -82,9 +79,9 @@ int nopruning(graph *g, int n, int maxn)
 int prunetight(graph *g, int n, int maxn)
 {
     int i, j, k, l, m;
-    int subgraphsleft;
+    boolean subgraphsleft;
     int nodeinds[MAXN];
-    graph mask;
+    setword mask;
 
     /* subgraphs with n <= tightk+1 cannot be overdetermined
      * graph underdeterminedness is prevented using mine and maxe */
@@ -108,7 +105,7 @@ int prunetight(graph *g, int n, int maxn)
     for (k = n - 1; k > tightk + 1; --k)
     {
         /* init subgraph with the k-1 first nodes and the new node */
-        mask = FIRST_NODES(k - 1) | NTH_NODE(n - 1);
+        mask = ALLMASK(k - 1) | NTH_NODE(n - 1);
         l = 0;
         for (i = 0; i < k - 1; ++i)
         {
@@ -127,12 +124,13 @@ int prunetight(graph *g, int n, int maxn)
                 return TRUE;
 
             /* go to next subgraph */
+            subgraphsleft = FALSE;
             for (i = k - 2; i >= 0; --i)
             {
                 if (nodeinds[i] < n + i - k)
                 {
                     l -= POPCOUNT(g[nodeinds[i]] & mask);
-                    mask ^= FIRST_NODES(2) >> nodeinds[i];
+                    mask ^= ALLMASK(2) >> nodeinds[i];
                     ++nodeinds[i];
                     l += POPCOUNT(g[nodeinds[i]] & mask);
 
@@ -144,11 +142,8 @@ int prunetight(graph *g, int n, int maxn)
                         mask |= NTH_NODE(nodeinds[j]);
                         l += POPCOUNT(g[nodeinds[j]] & mask);
                     }
+                    subgraphsleft = TRUE;
                     break;
-                }
-                else if (i == 0)
-                {
-                    subgraphsleft = FALSE;
                 }
             }
         }
@@ -160,8 +155,8 @@ int prunetight(graph *g, int n, int maxn)
 int prunehenneberg1(graph *g, int n, int maxn)
 {
     int i, m;
-    int h1left;
-    graph mask;
+    boolean h1left;
+    setword mask;
 
     /* subgraphs with n <= tightk+1 cannot be overdetermined
      * graph underdeterminedness is prevented using mine and maxe */
@@ -183,7 +178,7 @@ int prunehenneberg1(graph *g, int n, int maxn)
         return FALSE;
 
     /* deconstruct graph by reversing Henneberg type I moves */
-    mask = FIRST_NODES(n);
+    mask = ALLMASK(n);
     h1left = TRUE;
     while (h1left)
     {
