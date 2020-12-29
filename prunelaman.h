@@ -23,8 +23,8 @@
         prune = prunehenneberg1;                                          \
         if (!gotk)                                                        \
             tightk = 2;                                                   \
-        if (gotK)                                                         \
-            gt_abort(">E geng: -KL are incompatible\n");                  \
+        if (gotd || gote || gotK)                                         \
+            gt_abort(">E geng: -deK are incompatible with -L\n");         \
         tightK = tightk * (tightk + 1) / 2;                               \
     }                                                                     \
     else if (gotk)                                                        \
@@ -155,8 +155,7 @@ int prunetight(graph *g, int n, int maxn)
 int prunehenneberg1(graph *g, int n, int maxn)
 {
     int i, m;
-    boolean h1left;
-    setword mask;
+    setword mask, tovisit;
 
     /* subgraphs with n <= tightk+1 cannot be overdetermined
      * graph underdeterminedness is prevented using mine and maxe */
@@ -179,20 +178,16 @@ int prunehenneberg1(graph *g, int n, int maxn)
 
     /* deconstruct graph by reversing Henneberg type I moves */
     mask = ALLMASK(n);
-    h1left = TRUE;
-    while (h1left)
+    tovisit = ALLMASK(n);
+    while (tovisit)
     {
-        h1left = FALSE;
-        for (i = 0; i < n; ++i)
+        i = FIRSTBITNZ(tovisit);
+        tovisit &= ~NTH_NODE(i);
+        if (POPCOUNT(g[i] & mask) == tightk)
         {
-            if (mask & NTH_NODE(i) && POPCOUNT(g[i] & mask) == tightk)
-            {
-                mask &= ~NTH_NODE(i);
-                h1left = TRUE;
-                if (POPCOUNT(mask) <= tightk)
-                    return FALSE;
-            }
+            tovisit |= g[i] & mask;
+            mask &= ~NTH_NODE(i);
         }
     }
-    return TRUE;
+    return POPCOUNT(mask) > tightk;
 }
