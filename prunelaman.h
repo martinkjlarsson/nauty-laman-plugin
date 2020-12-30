@@ -2,6 +2,9 @@
 
 /* Add this flag when compiling geng: -D'PLUGIN="prunelaman.h"' */
 
+/* Using rationals for (k,l) comes with a small overhead. Define this macro to use integers for (k,l). */
+// #define INT_KL
+
 #define NTH_NODE(n) (bit[n]) /* Apparently lookup is faster than bitshift. */
 
 /* Uncomment to enable status reports to stderr. This will disable any other
@@ -12,46 +15,64 @@
 #define PRUNE (*prune)
 
 /* Parse plugin arguments. */
-#define PLUGIN_SWITCHES \
-    else SWINT('K', gotK, tightk, "geng -K") else SWINT('L', gotL, tightl, "geng -L") else SWBOOLEAN('H', henneberg1)
+#ifdef INT_KL
+#define TOO_MANY_EDGES(n, m) ((m) > tightkn * (n)-tightln)
+#define PLUGIN_SWITCHES else SWLONG('K', gotK, tightkn, "geng -K") else SWLONG('L', gotL, tightln, "geng -L") else SWBOOLEAN('H', henneberg1)
+#else
+#define TOO_MANY_EDGES(n, m) (tightkd * tightld * (m) > tightkn * tightld * (n)-tightln * tightkd)
+#define PLUGIN_SWITCHES else SWRANGE('K', "/", gotK, tightkn, tightkd, "geng -K") else SWRANGE('L', "/", gotL, tightln, tightld, "geng -L") else SWBOOLEAN('H', henneberg1)
+#endif
 
 /* Note: PLUGIN_INIT happens after validation of the input arguments in geng.c.
  * Beware of illegal argument combinations. */
-#define PLUGIN_INIT                                                       \
-    if (henneberg1)                                                       \
-    {                                                                     \
-        prune = prunehenneberg1;                                          \
-        if (!gotK)                                                        \
-            tightk = 2;                                                   \
-        if (gotd || gote || gotL)                                         \
-            gt_abort(">E geng: -deL are incompatible with -H\n");         \
-        tightl = tightk * (tightk + 1) / 2;                               \
-    }                                                                     \
-    else if (gotK)                                                        \
-    {                                                                     \
-        prune = prunetight;                                               \
-        if (!gotL)                                                        \
-            tightl = tightk * (tightk + 1) / 2;                           \
-    }                                                                     \
-    else                                                                  \
-    {                                                                     \
-        prune = nopruning;                                                \
-        if (gotL)                                                         \
-            gt_abort(">E geng: -K is required when providing -L\n");      \
-    }                                                                     \
-    if (henneberg1 || gotK)                                               \
-    {                                                                     \
-        if (!gote && maxn > 1)                                            \
-            geng_mine = geng_maxe = mine = maxe = tightk * maxn - tightl; \
-        if (!gotd && maxn > tightk)                                       \
-            geng_mindeg = mindeg = tightk;                                \
+#define PLUGIN_INIT                                                                   \
+    if (tightkn == tightkd)                                                           \
+        tightkd = 1;                                                                  \
+    else if (tightkd == 0)                                                            \
+        gt_abort(">E geng: -K has to be an number\n");                                \
+    if (tightln == tightld)                                                           \
+        tightld = 1;                                                                  \
+    else if (tightld == 0)                                                            \
+        gt_abort(">E geng: -L has to be an number\n");                                \
+    if (!gotL)                                                                        \
+    {                                                                                 \
+        tightln = tightkn * (tightkn + tightkd) / 2;                                  \
+        tightld = tightkd * tightkd;                                                  \
+    }                                                                                 \
+    if (henneberg1)                                                                   \
+    {                                                                                 \
+        prune = prunehenneberg1;                                                      \
+        if (tightkd != 1)                                                             \
+            gt_abort(">E geng: -K has to be an integer\n");                           \
+        if (gotd || gote || gotL)                                                     \
+            gt_abort(">E geng: -deK are incompatible with -H\n");                     \
+    }                                                                                 \
+    else if (gotK)                                                                    \
+    {                                                                                 \
+        prune = prunetight;                                                           \
+    }                                                                                 \
+    else                                                                              \
+    {                                                                                 \
+        prune = nopruning;                                                            \
+        if (gotL)                                                                     \
+            gt_abort(">E geng: -K is required when providing -L\n");                  \
+    }                                                                                 \
+    if (henneberg1 || gotK)                                                           \
+    {                                                                                 \
+        if (!gote && maxn > 1)                                                        \
+            geng_mine = geng_maxe = mine = maxe =                                     \
+                (tightkn * tightld * maxn - tightln * tightkd) / (tightkd * tightld); \
+        if (!gotd && maxn > tightkn / tightkd)                                        \
+            geng_mindeg = mindeg = tightkn / tightkd;                                 \
     }
 
 static int (*prune)(graph *, int, int);
 static boolean gotK = FALSE;
 static boolean gotL = FALSE;
-static int tightk; /* Specifies k for (k,l)-tight graphs. */
-static int tightl; /* Specifies l for (k,l)-tight graphs. */
+static long tightkn = 2; /* Specifies k for (k,l)-tight graphs. */
+static long tightkd = 1;
+static long tightln = 3; /* Specifies l for (k,l)-tight graphs. */
+static long tightld = 1;
 static boolean henneberg1 = FALSE;
 static nauty_counter total_number_of_graphs = 0;
 
@@ -83,9 +104,9 @@ int prunetight(graph *g, int n, int maxn)
     int nodeinds[MAXN];
     setword mask;
 
-    /* subgraphs with n <= tightk+1 cannot be overdetermined
+    /* subgraphs with n <= tightkn/tightkd+1 cannot be overdetermined
      * graph underdeterminedness is prevented using mine and maxe */
-    if (n <= tightk + 1)
+    if (n <= tightkn / tightkd + 1)
         return FALSE;
 
     /* find number of edges */
@@ -94,15 +115,15 @@ int prunetight(graph *g, int n, int maxn)
         m += POPCOUNT(g[i]);
     m = m / 2;
 
-    /* subgraph is overdetermined => not minimal */
-    if (m > tightk * n - tightl)
+    /* subgraph is overdetermined => not sparse */
+    if (TOO_MANY_EDGES(n, m))
         return TRUE;
 
-    /* Go through all subgraphs to make sure m <= tightk*n-tightl.
+    /* Go through all subgraphs to make sure they are sparse.
      * geng constructs graphs by succesively adding more nodes. Therefore,
      * we only need to check the subgraphs containing the new node. The other
      * subgraphs have been checked in previous steps. */
-    for (k = n - 1; k > tightk + 1; --k)
+    for (k = n - 1; k > tightkn / tightkd + 1; --k)
     {
         /* init subgraph with the k-1 first nodes and the new node */
         mask = ALLMASK(k - 1) | NTH_NODE(n - 1);
@@ -119,8 +140,8 @@ int prunetight(graph *g, int n, int maxn)
         subgraphsleft = TRUE;
         while (subgraphsleft)
         {
-            /* subgraph is overdetermined => not minimal */
-            if (l > tightk * k - tightl)
+            /* subgraph is overdetermined => not sparse */
+            if (TOO_MANY_EDGES(k, l))
                 return TRUE;
 
             /* go to next subgraph */
@@ -157,9 +178,9 @@ int prunehenneberg1(graph *g, int n, int maxn)
     int i, m;
     setword mask, tovisit;
 
-    /* subgraphs with n <= tightk+1 cannot be overdetermined
+    /* subgraphs with n <= tightkn+1 cannot be overdetermined
      * graph underdeterminedness is prevented using mine and maxe */
-    if (n <= tightk + 1)
+    if (n <= tightkn + 1)
         return FALSE;
 
     /* find number of edges */
@@ -168,8 +189,8 @@ int prunehenneberg1(graph *g, int n, int maxn)
         m += POPCOUNT(g[i]);
     m = m / 2;
 
-    /* subgraph is overdetermined => not minimal */
-    if (m > tightk * n - tightl)
+    /* subgraph is overdetermined => not sparse */
+    if (m > tightkn * n - tightln)
         return TRUE;
 
     /* we are done with subgraphs */
@@ -183,11 +204,11 @@ int prunehenneberg1(graph *g, int n, int maxn)
     {
         i = FIRSTBITNZ(tovisit);
         tovisit &= ~NTH_NODE(i);
-        if (POPCOUNT(g[i] & mask) == tightk)
+        if (POPCOUNT(g[i] & mask) == tightkn)
         {
             tovisit |= g[i] & mask;
             mask &= ~NTH_NODE(i);
         }
     }
-    return POPCOUNT(mask) > tightk;
+    return POPCOUNT(mask) > tightkn;
 }
