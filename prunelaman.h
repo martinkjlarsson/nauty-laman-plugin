@@ -24,7 +24,7 @@
         if (!gotK)                                                        \
             tightk = 2;                                                   \
         if (gotd || gote || gotL)                                         \
-            gt_abort(">E geng: -deK are incompatible with -L\n");         \
+            gt_abort(">E geng: -deL are incompatible with -H\n");         \
         tightl = tightk * (tightk + 1) / 2;                               \
     }                                                                     \
     else if (gotK)                                                        \
@@ -37,7 +37,7 @@
     {                                                                     \
         prune = nopruning;                                                \
         if (gotL)                                                         \
-            gt_abort(">E geng: -k is required when providing -K\n");      \
+            gt_abort(">E geng: -K is required when providing -L\n");      \
     }                                                                     \
     if (henneberg1 || gotK)                                               \
     {                                                                     \
