@@ -5,7 +5,7 @@ A plugin for the utility program `geng` provided with [Nauty](http://pallini.di.
 ## Installation
 1. Clone this repo.
 2. Download and build [Nauty](http://pallini.di.uniroma1.it/).
-3. `geng` has to be rebuilt with the flag `-D'PLUGIN="<path to this repo>/prunelaman.h"'` to inject the plugin. Edit the `makefile` for Nauty accordingly and rebuild `geng` (e.g. `rm -f geng && make geng`). If Nauty and this repository have the same parent folder the entry for `geng` in the `makefile` could look something like this:
+3. `geng` has to be rebuilt with the flag `-D'PLUGIN="<path to this repo>/prunelaman.h"'` to inject the plugin. Edit the `makefile` for Nauty accordingly and rebuild `geng` (e.g. `rm -f geng && make geng`). If Nauty and this repository have the same parent folder, the entry for `geng` in the `makefile` could look something like this:
 ```makefile
 geng : ${GTOOLSH} ../nauty-laman-plugin/prunelaman.h geng.c gtoolsW.o \
 		nautyW1.o nautilW1.o naugraphW1.o schreier.o naurng.o
@@ -47,10 +47,10 @@ Exec. time (12 cores) |   2.1 s   |   1.3 min  |      1.1 h      |    2.5 days  
 ### Laman graphs constructible by Henneberg type I moves
 OEIS entry: [A273468](https://oeis.org/A273468 "Number of minimally rigid graphs with n vertices constructible by Henneberg type I moves.")<br/>
 Command: `geng $n -H -u`
-n                     |   10   |     11    |     12     |      13     |    14 (new)    |     15 (new)    |      16 (new)     |
-----------------------|:------:|:---------:|:----------:|:-----------:|:--------------:|:---------------:|:-----------------:|
-H1 Laman graphs       | 75 635 | 1 237 670 | 23 352 425 | 498 028 767 | 11 836 515 526 | 310 152 665 647 | 8 883 427 573 134 |
-Exec. time (1 core)   | 140 ms |   1.3 s   |    24 s    |    11 min   |      5.4 h     |    7.7 days\*   |    290 days\*\*   |
+n                     |     12     |      13     |    14 (new)    |     15 (new)    |      16 (new)     |
+----------------------|:----------:|:-----------:|:--------------:|:---------------:|:-----------------:|
+H1 Laman graphs       | 23 352 425 | 498 028 767 | 11 836 515 526 | 310 152 665 647 | 8 883 427 573 134 |
+Exec. time (1 core)   |    24 s    |    11 min   |      5.4 h     |    7.7 days\*   |    290 days\*\*   |
 
 \* Total CPU time of 6 cores.<br/>
 \*\* Total CPU time of 64 cores on an AMD Ryzen Threadripper 3990X processor.
@@ -93,10 +93,10 @@ Exec. time (1 core)   |       |       |       |       | 20 ms | 600 ms | 1.1 min
 ### Pseudoforests
 OEIS entry: [A134964](https://oeis.org/A134964 "Number of different unlabeled n-node graphs with at most one cycle in each connected component.")<br/>
 Command: `geng $n 0:999 -K1L0 -u`
-n                      |   12   |   13   |    14   |    15   |    16   |     17    |     18    |     19     |
------------------------|:------:|:------:|:-------:|:-------:|:-------:|:---------:|:---------:|:----------:|
-Pseudoforests          | 13 323 | 36 541 | 101 323 | 282 693 | 793 697 | 2 237 982 | 6 335 978 | 17 992 622 |
-Exec. time (1 core)    | 240 ms | 990 ms |  5.3 s  |   29 s  | 2.6 min |   15 min  |   1.3 h   |    7.1 h   |
+n                      |   13   |    14   |    15   |    16   |     17    |     18    |     19     |
+-----------------------|:------:|:-------:|:-------:|:-------:|:---------:|:---------:|:----------:|
+Pseudoforests          | 36 541 | 101 323 | 282 693 | 793 697 | 2 237 982 | 6 335 978 | 17 992 622 |
+Exec. time (1 core)    | 990 ms |  5.3 s  |   29 s  | 2.6 min |   15 min  |   1.3 h   |    7.1 h   |
 
 
 ### Trees
