@@ -1,0 +1,11 @@
+#!/bin/bash
+#
+# Call geng for all n in a range.
+
+minn=${1:?"Please specify the minimum number of vertices"}
+maxn=${2:?"Please specify the maximum number of vertices"}
+
+for i in $(seq $minn $maxn)
+do
+    ./geng $i "${@:3}"
+done

@@ -11,7 +11,7 @@ for i in $(seq 1 $mod)
 do
     let rem=$i-1
     let x=1000*$mod
-    ./geng $n $rem/$mod -x${x}X1 -u &
+    ./geng $n $rem/$mod -x${x}X1 -K2 -u &
     pids[${i}]=$!
 done
 
