@@ -106,6 +106,92 @@ void countgraphs(FILE *f, graph *g, int n)
     }
 }
 
+/* Generates the next combination of k items from n possible ones, i.e., the
+ * next k-subset of an n-set. If A is initialized with the items 0..k-1,
+ * repeatedly calling the function will generate all possible combinations
+ * until it circles back to 0..k-1, at which point FALSE is return. The
+ * combinations are constructed in such a way that only one item is removed and
+ * replaced every call (a so called combinatorial Gray code).
+ *
+ * See Nijenhuis, Albert, and Herbert S. Wilf. Combinatorial algorithms: for
+ * computers and calculators. Elsevier, 2014. for the original FORTRAN code.
+ *
+ * Arguments:
+ * n - the number of items to choose from.
+ * k - the number of items to choose.
+ * A - the current combination which will be updated to contain the next one.
+ * in - will be updated to contain the item which was added to A.
+ * out - will be updated to contain the item which was removed from A.
+ *
+ * Returns:
+ * FALSE if the returned combination in A is 0..k-1 and TRUE otherwise.
+ */
+inline boolean nxksrd(int n, int k, int *restrict A, int *restrict in, int *restrict out)
+{
+    int j, m;
+
+    j = 0;
+    if (k & 1)
+    {
+        // 100
+        m = j < k - 1 ? A[j + 1] - 1 : n - 1;
+        if (m != A[j])
+        {
+            *out = A[j];
+            A[j] = A[j] + 1;
+            *in = A[j];
+            if (j != 0) // else goto 200
+            {
+                A[j - 1] = *out;
+                *out = j - 1;
+            }
+            return TRUE; // goto 200
+        }
+        j++;
+    }
+
+    while (j < k)
+    {
+        // 30
+        if (A[j] != j) // else goto 100
+        {
+            *out = A[j];
+            A[j] = A[j] - 1;
+            *in = A[j];
+            if (j != 0)
+            {
+                *in = j - 1;
+                A[j - 1] = *in;
+            }
+            return TRUE; // goto 200
+        }
+        j++;
+
+        // 100
+        m = j < k - 1 ? A[j + 1] - 1 : n - 1;
+        if (m != A[j])
+        {
+            *out = A[j];
+            A[j] = A[j] + 1;
+            *in = A[j];
+            if (j != 0) // else goto 200
+            {
+                A[j - 1] = *out;
+                *out = j - 1;
+            }
+            return TRUE; // goto 200
+        }
+        j++;
+    }
+
+    // 40
+    A[k - 1] = k - 1;
+    *in = k - 1;
+    *out = n - 1;
+    return FALSE;
+}
+
+/* dummy function when no pruning is applied */
 int nopruning(graph *g, int n, int maxn)
 {
     return FALSE;
@@ -114,13 +200,12 @@ int nopruning(graph *g, int n, int maxn)
 /* remove graphs that are not (k,l)-sparse */
 int prunetight(graph *g, int n, int maxn)
 {
-    int i, j, k, l, m;
-    boolean subgraphsleft;
+    int i, k, l, m;
     int nodeinds[MAXN];
+    int in, out;
     setword mask;
 
-    /* subgraphs with n <= tightkn/tightkd+1 cannot be overdetermined
-     * graph underdeterminedness is prevented using mine and maxe */
+    /* subgraphs with n <= tightkn/tightkd+1 cannot be overdetermined */
     if (n <= tightkn / tightkd + 1)
         return FALSE;
 
@@ -134,55 +219,35 @@ int prunetight(graph *g, int n, int maxn)
     if (TOO_MANY_EDGES(n, m))
         return TRUE;
 
-    /* Go through all subgraphs to make sure they are sparse.
-     * geng constructs graphs by succesively adding more nodes. Therefore,
-     * we only need to check the subgraphs containing the new node. The other
-     * subgraphs have been checked in previous steps. */
+    /* Go through all subgraphs verifying sparsity. geng constructs graphs by
+     * successively adding more nodes. Therefore, we only need to check the
+     * subgraphs containing the new last node. The other subgraphs have been
+     * checked in previous steps. The first subgraph consists of all nodes
+     * except the second to last one. */
+    l = m - POPCOUNT(g[n - 2]);
+    mask = ALLMASK(n) & ~NTH_NODE(n - 2);
+    for (i = 0; i < n - 1; ++i)
+        nodeinds[i] = i;
+
+    /* go through all k-vertex subgraphs */
     for (k = n - 1; k > tightkn / tightkd + 1; --k)
     {
-        /* init subgraph with the k-1 first nodes and the new node */
-        mask = ALLMASK(k - 1) | NTH_NODE(n - 1);
-        l = 0;
-        for (i = 0; i < k - 1; ++i)
-        {
-            nodeinds[i] = i;
-            l += POPCOUNT(g[i] & mask);
-        }
-        nodeinds[k - 1] = n - 1;
-        l += POPCOUNT(g[n - 1] & mask);
-        l = l / 2;
+        if (TOO_MANY_EDGES(k, l))
+            return TRUE;
 
-        subgraphsleft = TRUE;
-        while (subgraphsleft)
+        while (nxksrd(n - 1, k - 1, nodeinds, &in, &out))
         {
-            /* subgraph is overdetermined => not sparse */
+            l -= POPCOUNT(g[out] & mask);
+            mask ^= NTH_NODE(out);
+            mask ^= NTH_NODE(in);
+            l += POPCOUNT(g[in] & mask);
+
             if (TOO_MANY_EDGES(k, l))
                 return TRUE;
-
-            /* go to next subgraph */
-            subgraphsleft = FALSE;
-            for (i = k - 2; i >= 0; --i)
-            {
-                if (nodeinds[i] < n + i - k)
-                {
-                    l -= POPCOUNT(g[nodeinds[i]] & mask);
-                    mask ^= ALLMASK(2) >> nodeinds[i];
-                    ++nodeinds[i];
-                    l += POPCOUNT(g[nodeinds[i]] & mask);
-
-                    for (j = i + 1; j < k - 1; ++j)
-                    {
-                        l -= POPCOUNT(g[nodeinds[j]] & mask);
-                        mask &= ~NTH_NODE(nodeinds[j]);
-                        nodeinds[j] = nodeinds[i] + j - i;
-                        mask |= NTH_NODE(nodeinds[j]);
-                        l += POPCOUNT(g[nodeinds[j]] & mask);
-                    }
-                    subgraphsleft = TRUE;
-                    break;
-                }
-            }
         }
+        /* nodeinds == 0..k-2, in == k-2, out == n-2 */
+        l -= POPCOUNT(g[out] & mask);
+        mask ^= NTH_NODE(out);
     }
     return FALSE;
 }
