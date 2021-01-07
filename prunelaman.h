@@ -17,10 +17,10 @@
 /* Parse plugin arguments. */
 #ifdef INT_KL
 #define TOO_MANY_EDGES(n, m) ((m) > tightkn * (n)-tightln)
-#define PLUGIN_SWITCHES else SWLONG('K', gotK, tightkn, "geng -K") else SWLONG('L', gotL, tightln, "geng -L") else SWBOOLEAN('H', henneberg1)
+#define PLUGIN_SWITCHES else SWLONG('K', gotK, tightkn, "geng -K") else SWLONG('L', gotL, tightln, "geng -L") else SWBOOLEAN('H', henneberg1) else SWINT('N', gotN, minn, "geng -N")
 #else
 #define TOO_MANY_EDGES(n, m) (tightkd * tightld * (m) > tightkn * tightld * (n)-tightln * tightkd)
-#define PLUGIN_SWITCHES else SWRANGE('K', "/", gotK, tightkn, tightkd, "geng -K") else SWRANGE('L', "/", gotL, tightln, tightld, "geng -L") else SWBOOLEAN('H', henneberg1)
+#define PLUGIN_SWITCHES else SWRANGE('K', "/", gotK, tightkn, tightkd, "geng -K") else SWRANGE('L', "/", gotL, tightln, tightld, "geng -L") else SWBOOLEAN('H', henneberg1) else SWINT('N', gotN, minn, "geng -N")
 #endif
 
 /* Note: PLUGIN_INIT happens after validation of the input arguments in geng.c.
@@ -49,6 +49,12 @@
         tightln = tightkn * (tightkn + tightkd) / 2;                                                  \
         tightld = tightkd * tightkd;                                                                  \
     }                                                                                                 \
+    if (!gotN)                                                                                        \
+    {                                                                                                 \
+        minn = tightkn / tightkd;                                                                     \
+    }                                                                                                 \
+    while (!TOO_MANY_EDGES(minn + 1, minn * (minn + 1) / 2))                                          \
+        minn++;                                                                                       \
     if (henneberg1)                                                                                   \
     {                                                                                                 \
         prune = prunehenneberg1;                                                                      \
@@ -79,15 +85,25 @@
         }                                                                                             \
         if (!gotd && !gote && maxn > tightkn / tightkd)                                               \
             geng_mindeg = mindeg = tightkn / tightkd;                                                 \
+        if (!quiet)                                                                                   \
+        {                                                                                             \
+            if (tightkd != 1 || tightld != 1)                                                         \
+                fprintf(stderr, ">A Laman plugin -K%ld/%ldL%ld/%ldN%d\n",                             \
+                        tightkn, tightkd, tightln, tightld, minn);                                    \
+            else                                                                                      \
+                fprintf(stderr, ">A Laman plugin -K%ldL%ldN%d\n", tightkn, tightln, minn);            \
+        }                                                                                             \
     }
 
 static int (*prune)(graph *, int, int);
 static boolean gotK = FALSE;
 static boolean gotL = FALSE;
+static boolean gotN = FALSE;
 static long tightkn = 2; /* Specifies k for (k,l)-tight graphs. */
 static long tightkd = 1;
 static long tightln = 3; /* Specifies l for (k,l)-tight graphs. */
 static long tightld = 1;
+static int minn = 2;
 static boolean henneberg1 = FALSE;
 static nauty_counter total_number_of_graphs = 0;
 
@@ -205,8 +221,8 @@ int prunetight(graph *g, int n, int maxn)
     int in, out;
     setword mask;
 
-    /* subgraphs with n <= tightkn/tightkd+1 cannot be overdetermined */
-    if (n <= tightkn / tightkd + 1)
+    /* small graphs are considered sparse */
+    if (n <= minn)
         return FALSE;
 
     /* find number of edges */
@@ -230,7 +246,7 @@ int prunetight(graph *g, int n, int maxn)
         nodeinds[i] = i;
 
     /* go through all k-vertex subgraphs */
-    for (k = n - 1; k > tightkn / tightkd + 1; --k)
+    for (k = n - 1; k > minn; --k)
     {
         if (TOO_MANY_EDGES(k, l))
             return TRUE;
@@ -258,9 +274,8 @@ int prunehenneberg1(graph *g, int n, int maxn)
     int i, m;
     setword mask, tovisit;
 
-    /* subgraphs with n <= tightkn+1 cannot be overdetermined
-     * graph underdeterminedness is prevented using mine and maxe */
-    if (n <= tightkn + 1)
+    /* small graphs are considered sparse */
+    if (n <= minn)
         return FALSE;
 
     /* find number of edges */
