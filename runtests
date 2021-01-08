@@ -1,0 +1,97 @@
+#!/bin/bash
+#
+# Run tests for Laman plugin.
+
+GREEN='\033[0;32m'
+RED='\033[0;31m'
+NC='\033[0m'
+
+fails=0
+
+test()
+{
+    for i in ${!exp[@]}
+    do
+        printf "./geng ${n[$i]} $* \t"
+        local v=$(./geng ${n[$i]} "$@" 2> /dev/null | wc -l)
+        if [ "$v" -eq "${exp[$i]}" ]
+        then
+            printf "${GREEN}OK${NC}\n"
+        else
+            printf "${RED}FAILED${NC}\tExpected ${exp[$i]} but got $v\n"
+            fails=`expr $fails + 1`
+        fi
+    done
+}
+
+# Connected graphs - https://oeis.org/A001349
+echo "Connected graphs"
+n=($(seq 1 9))
+exp=(1 1 2 6 21 112 853 11117 261080)
+test -c
+echo
+
+# Laman graphs - https://oeis.org/A227117
+echo "Laman graphs"
+n=($(seq 1 10))
+exp=(1 1 1 1 3 13 70 608 7222 110132)
+test -K2
+echo
+
+# Laman graphs constructible by Henneberg type I moves - https://oeis.org/A273468
+echo "Laman graphs constructible by Henneberg type I moves"
+n=($(seq 1 10))
+exp=(1 1 1 1 3 11 61 499 5500 75635)
+test -H
+echo
+
+# Bipartite Laman graphs - https://oeis.org/A328060
+echo "Bipartite Laman graphs"
+n=($(seq 1 12))
+exp=(1 1 0 0 0 1 1 5 19 123 871 8304)
+test -bK2
+echo
+
+# Geiringer graphs - https://oeis.org/A328419
+echo "Geiringer graphs/(3,6)-tight graphs"
+n=($(seq 1 7)) # Test will fail for n > 7 and that is correct
+exp=(1 1 1 1 1 4 26)
+test -K3
+echo
+
+# (3/2,2)-tight graphs - https://oeis.org/A233288
+echo "(3/2,2)-tight graphs"
+n=($(seq 2 2 12))
+exp=(1 1 2 16 230 6856)
+test -K3/2L2
+echo
+
+# Forests - https://oeis.org/A005195
+echo "Forests"
+n=($(seq 1 12))
+exp=(1 2 3 6 10 20 37 76 153 329 710 1601)
+test 0:999 -K1L1
+echo
+
+# Pseudoforests - https://oeis.org/A134964
+echo "Pseudoforests"
+n=($(seq 1 12))
+exp=(1 2 4 9 19 46 108 273 696 1836 4896 13323)
+test 0:999 -K1L0
+echo
+
+# Trees - https://oeis.org/A000055
+echo "Trees"
+n=($(seq 1 12))
+exp=(1 1 1 2 3 6 11 23 47 106 235 551)
+test -K1
+echo
+
+
+if [ $fails -eq 0 ] ; then
+   printf "${GREEN}PASSED ALL TESTS${NC}\n\n"
+   exit 0
+else
+   printf "${RED}$fails TESTS FAILED${NC}\n\n"
+   exit 1
+fi
