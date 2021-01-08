@@ -7,6 +7,24 @@
 
 #define NTH_NODE(n) (bit[n]) /* Apparently lookup is faster than bitshift. */
 
+/* Comment out if __builtin_ctz is missing. */
+#define HAVE_CTZ
+
+#if defined(HAVE_CTZ)
+#define CTZ(x) __builtin_ctz(x)
+#else
+#if MAXN > 32
+#error Manual CTZ implementation only supports MAXN <= 32.
+#endif
+static const int MultiplyDeBruijnBitPosition[32] =
+    {
+        0, 1, 28, 2, 29, 14, 24, 3, 30, 22, 20, 15, 25, 17, 4, 8,
+        31, 27, 13, 23, 21, 19, 16, 7, 26, 12, 18, 6, 11, 5, 10, 9};
+#define CTZ(x) MultiplyDeBruijnBitPosition[(((unsigned)(x) & -(unsigned)(x)) * 0x077CB531U) >> 27]
+// #include <string.h>
+// #define CTZ(x) (ffs(x) - 1) // This is ridiculously slow...
+#endif
+
 /* Uncomment to enable status reports to stderr. This will disable any other
  * output options -uyngs. */
 // #define OUTPROC countgraphs
@@ -65,7 +83,7 @@
     }                                                                                                 \
     else if (gotK)                                                                                    \
     {                                                                                                 \
-        prune = prunetight;                                                                           \
+        prune = tightkn < 2 * tightkd ? prunetight : prunetight2;                                     \
     }                                                                                                 \
     else                                                                                              \
     {                                                                                                 \
@@ -213,7 +231,8 @@ int nopruning(graph *g, int n, int maxn)
     return FALSE;
 }
 
-/* remove graphs that are not (k,l)-sparse */
+/* remove graphs that are not (k,l)-sparse
+ * seems to have better performance than prunetight2 for k < 2*/
 int prunetight(graph *g, int n, int maxn)
 {
     int i, k, l, m;
@@ -264,6 +283,48 @@ int prunetight(graph *g, int n, int maxn)
         /* nodeinds == 0..k-2, in == k-2, out == n-2 */
         l -= POPCOUNT(g[out] & mask);
         mask ^= NTH_NODE(out);
+    }
+    return FALSE;
+}
+
+/* remove graphs that are not (k,l)-sparse
+ * seems to have better performance than prunetight for k >= 2*/
+int prunetight2(graph *g, int n, int maxn)
+{
+    int i, j, m, k, l, degree;
+    setword mask;
+
+    /* small graphs are considered sparse */
+    if (n <= minn)
+        return FALSE;
+
+    /* find number of edges */
+    m = 0;
+    for (i = 0; i < n; ++i)
+        m += POPCOUNT(g[i]);
+    m = m / 2;
+
+    /* subgraph is overdetermined => not sparse */
+    if (TOO_MANY_EDGES(n, m))
+        return TRUE;
+
+    /* Go through all subgraphs verifying sparsity. We use the Gray code binary
+     * representation of i as a mask for which nodes are included in the
+     * subgraph. This way, in every iteration, we either add or remove a single
+     * node to the previous subgraph. */
+    k = 1;
+    l = 0;
+    mask = NTH_NODE(n - 1); /* always include the new node */
+    for (i = 1; i < (1 << n - 1); ++i)
+    {
+        j = CTZ(i);
+        mask ^= NTH_NODE(j); /* add or remove node */
+        degree = POPCOUNT(g[j] & mask);
+        l += mask & NTH_NODE(j) ? degree : -degree;
+        k += mask & NTH_NODE(j) ? 1 : -1;
+
+        if (k > minn && TOO_MANY_EDGES(k, l))
+            return TRUE;
     }
     return FALSE;
 }
