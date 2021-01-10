@@ -1,0 +1,27 @@
+#!/bin/bash
+#
+# Start multiple instances of geng in parallel
+
+mod=${1:?"Please specify the number of instances of geng to start"}
+physical_cores=$(grep ^cpu\\scores /proc/cpuinfo | uniq |  awk '{print $4}' );
+logical_cores=$(grep -c ^processor /proc/cpuinfo)
+
+echo "Starting $mod instances of geng on a processor with $physical_cores cores/$logical_cores threads"
+
+# Kill any started instances in case we get killed.
+trap 'jobs -p | xargs -r kill' EXIT
+
+# Start multiple parallel instances of geng.
+for i in $(seq 1 $mod)
+do
+    let rem=$i-1
+    let x=1000*$mod
+    ./geng "${@:2}" $rem/$mod -x${x}X1  &
+    pids[${i}]=$!
+done
+
+# Wait for all instances to complete.
+for pid in ${pids[*]}
+do
+    wait $pid
+done
