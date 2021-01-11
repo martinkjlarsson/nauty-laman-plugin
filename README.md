@@ -5,11 +5,11 @@ A plugin for the utility program `geng` provided with [Nauty](http://pallini.di.
 ## Installation
 1. Clone this repo.
 2. Download and build [Nauty](http://pallini.di.uniroma1.it/).
-3. `geng` has to be rebuilt with the flag `-D'PLUGIN="<path to this repo>/prunelaman.h"'` to inject the plugin. Edit the `makefile` for Nauty accordingly and rebuild `geng` (e.g. `rm -f geng && make geng`). If Nauty and this repository have the same parent folder, the entry for `geng` in the `makefile` could look something like this:
+3. `geng` has to be rebuilt with the flag `-D'PLUGIN="<path to this repo>/prunelaman.h"'` to inject the plugin. Edit the `makefile` for Nauty accordingly and rebuild `geng` (e.g. `rm -f geng && make geng`). The entry for `geng` in the `makefile` could look something like this:
 ```makefile
-geng : ${GTOOLSH} ../nauty-laman-plugin/prunelaman.h geng.c gtoolsW.o \
+geng : ${GTOOLSH} <path to this repo>/prunelaman.h geng.c gtoolsW.o \
 		nautyW1.o nautilW1.o naugraphW1.o schreier.o naurng.o
-	${CC} -o geng ${CFLAGS} -D'PLUGIN="../nauty-laman-plugin/prunelaman.h"' \
+	${CC} -o geng ${CFLAGS} -D'PLUGIN="<path to this repo>/prunelaman.h"' \
 		${W1} geng.c gtoolsW.o nautyW1.o nautilW1.o naugraphW1.o schreier.o \
 		naurng.o ${LDFLAGS}
 ```
@@ -23,7 +23,7 @@ The plugin adds a few new parameters to `geng`:
 * `-H`: generate (k,l)-tight graphs constructible by [Henneberg type I moves](https://en.wikipedia.org/wiki/Laman_graph#Henneberg_construction). k defaults to 2 but can be set using `-K#`. l is always k(k+1)/2.
 * `-N#`: all graphs with this number of nodes or fewer are considered sparse (defaults to floor(k)). This value will automatically be increased if doing so does not affect the result.
 
-Both `-K` and `-L` accept rational numbers making it possible to generate, e.g., (3/2,2)-tight graphs (see results below). Note, however, that denominators equal to their numerator are ignored, i.e., `-K2/2` is equivalent to `-K2`. If rational arguments are not needed, define the macro `INT_KL` before compiling for a small increase in performance.
+Both `-K` and `-L` accept rational numbers making it possible to generate, e.g., (3/2,2)-tight graphs (see results below). Note, however, that denominators equal to their numerator are ignored, e.g., `-K2/2` is equivalent to `-K2`. If rational arguments are not needed, define the macro `INT_KL` before compiling for a small increase in performance.
 
 
 ## Results - counts and execution times
@@ -38,7 +38,7 @@ Command: `geng $n -K2 -u`
 n                     |     11    |     12     |        13       |    14 (new)    |      15 (new)     |
 ----------------------|:---------:|:----------:|:---------------:|:--------------:|:-----------------:|
 Laman graphs          | 2 039 273 | 44 176 717 |  1 092 493 042  | 30 322 994 747 | 932 701 249 291\* |
-Exec. time (1 core)   |    11 s   |   7.7 min  |      6.6 h      | *Not measured* |   *Not measured*  |
+Exec. time (1 core)   |    11 s   |   7.7 min  |      6.6 h      |     15 days    |   *Not measured*  |
 Exec. time (6 cores)  |   2.5 s   |   1.4 min  |      1.2 h      |    2.6 days    |   *Not measured*  |
 Exec. time (12 cores) |   2.1 s   |   1.3 min  |      1.1 h      |    2.5 days    |   *Not measured*  |
 
@@ -59,12 +59,13 @@ Exec. time (1 core)   |    24 s    |    11 min   |      5.4 h     |     7.6 days
 ### Bipartite Laman graphs
 OEIS entry: [A328060](https://oeis.org/A328060 "Number of bipartite Laman graphs on n vertices.")<br/>
 Command: `geng $n -bK2 -u`
-n                      |   12   |   13   |     14    |     15     |   16 (new)  |    17 (new)   |
------------------------|:------:|:------:|:---------:|:----------:|:-----------:|:-------------:|
-Bipartite Laman graphs |  8 304 | 92 539 | 1 210 044 | 17 860 267 | 293 210 063 | 5 277 557 739 |
-Exec. time (1 core)    | 320 ms |  3.4 s |    66 s   |   29 min   |     14 h    |   21 days\*   |
+n                      |   13   |     14    |     15     |   16 (new)  |    17 (new)   |     18 (new)    |
+-----------------------|:------:|:---------:|:----------:|:-----------:|:-------------:|:---------------:|
+Bipartite Laman graphs | 92 539 | 1 210 044 | 17 860 267 | 293 210 063 | 5 277 557 739 | 103 177 250 918 |
+Exec. time (1 core)    |  3.4 s |    66 s   |   29 min   |     14 h    |   21 days\*   |   780 days\*\*  |
 
 \* Total CPU time of 6 cores.
+\*\* Total CPU time of 64 cores on an AMD Ryzen Threadripper 3990X processor.
 
 
 ### Geiringer graphs
@@ -103,7 +104,7 @@ Exec. time (1 core)    |  5.3 s  |   29 s  | 2.6 min |   15 min  |   1.3 h   |  
 OEIS entry: [A000055](https://oeis.org/A000055 "Number of trees with n unlabeled nodes.")<br/>
 Command: `geng $n -K1 -u`
 
-Trees, minimally rigid graphs in 1D, are exactly the (1,1)-tight graphs.
+[Trees](https://en.wikipedia.org/wiki/Tree_(graph_theory)), minimally rigid graphs in 1D, are exactly the (1,1)-tight graphs.
 n                      |   15  |   16   |   17   |    18   |    19   |    20   |     21    |     22    |
 -----------------------|:-----:|:------:|:------:|:-------:|:-------:|:-------:|:---------:|:---------:|
 Trees                  | 7 741 | 19 320 | 48 629 | 123 867 | 317 955 | 823 065 | 2 144 505 | 5 623 756 |
