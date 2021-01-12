@@ -1,11 +1,24 @@
 #!/bin/bash
 #
 # Call geng for all n in a range.
+#
+# Arguments:
+#   The range of n as arguments to pass to seq.
+#   Arguments to pass to geng.
+#
+# Examples:
+#   Count the number of Laman graphs for n in the range [1, 10].
+#   ./geng_range 10 -K2 -u
+#
+#   Count the number of Laman graphs for n in the range [5, 10].
+#   ./geng_range "5 10" -K2 -u
+#
+#   Count the number of Laman graphs for even n in the range [2, 10].
+#   ./geng_range "2 2 10" -K2 -u
 
-minn=${1:?"Please specify the minimum number of vertices"}
-maxn=${2:?"Please specify the maximum number of vertices"}
+ns=${1:?"Please specify a sequence of n"}
 
-for i in $(seq $minn $maxn)
+for i in $(seq $ns)
 do
-    ./geng $i "${@:3}"
+    ./geng $i "${@:2}"
 done
