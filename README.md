@@ -26,6 +26,10 @@ The plugin adds a few new parameters to `geng`:
 Both `-K` and `-L` accept rational numbers making it possible to generate, e.g., (3/2,2)-tight graphs (see results below). Note, however, that denominators equal to their numerator are ignored, e.g., `-K2/2` is equivalent to `-K2`. If rational arguments are not needed, define the macro `INT_KL` before compiling for a small increase in performance.
 
 
+## Algorithm
+For integer k and l satisfying 0 <= l < 2k, the pebble game algorithm presented in [Lee and Streinu (2008) Pebble game algorithms and sparse graphs](https://www.sciencedirect.com/science/article/pii/S0012365X07005602) is used. For all other cases, a naive method checking the sparsity of every subgraph is used. However, due to how `geng` generates the graphs, even this naive approach is fast.
+
+
 ## Results - counts and execution times
 The tables below show the execution time when generating graphs for various number of vertices n. Unless otherwise specified, the tests were run on an 6-core/12-thread Intel® Core™ i7-6800K CPU @ 3.40GHz. Extensions to entries in [OEIS](https://oeis.org/) are marked with *(new)*.
 
@@ -59,20 +63,19 @@ Exec. time (1 core)   |    24 s    |    11 min   |      5.4 h     |     7.6 days
 ### Bipartite Laman graphs
 OEIS entry: [A328060](https://oeis.org/A328060 "Number of bipartite Laman graphs on n vertices.")<br/>
 Command: `geng $n -bK2 -u`
-n                      |   13   |     14    |     15     |   16 (new)  |    17 (new)   |     18 (new)    |
------------------------|:------:|:---------:|:----------:|:-----------:|:-------------:|:---------------:|
-Bipartite Laman graphs | 92 539 | 1 210 044 | 17 860 267 | 293 210 063 | 5 277 557 739 | 103 177 250 918 |
-Exec. time (1 core)    |  3.4 s |    66 s   |   29 min   |     14 h    |   21 days\*   |   780 days\*\*  |
+n                      |     14    |     15     |   16 (new)  |    17 (new)   |     18 (new)    |
+-----------------------|:---------:|:----------:|:-----------:|:-------------:|:---------------:|
+Bipartite Laman graphs | 1 210 044 | 17 860 267 | 293 210 063 | 5 277 557 739 | 103 177 250 918 |
+Exec. time (1 core)    |    66 s   |   29 min   |     14 h    |    20 days    |    780 days\*   |
 
-\* Total CPU time of 6 cores.
-\*\* Total CPU time of 64 cores on an AMD Ryzen Threadripper 3990X processor.
+\* Total CPU time of 64 cores on an AMD Ryzen Threadripper 3990X processor.
 
 
 ### Geiringer graphs
 OEIS entry: [A328419](https://oeis.org/A328419 "Number of minimally rigid graphs in 3D on n vertices.")<br/>
 Command: `geng $n -K3 -u`
 
-Geiringer graphs, minimally rigid graphs in 3D, are exactly the (3,6)-tight graphs for n=1..7. For larger n the (3,6)-tight graphs form a proper superset of the Geiringer graphs. Consequently, the Geiringer graphs can be found by numerically checking the rigidity of the generated (3,6)-tight graphs.
+Geiringer graphs, minimally rigid graphs in 3D, are exactly the (3,6)-tight graphs for n=1..7. For larger n, the (3,6)-tight graphs form a proper superset of the Geiringer graphs. The Geiringer graphs can be found by numerically checking the rigidity of the generated (3,6)-tight graphs.
 n                     |   6   |   7   |   8   |    9   |    10   |     11     |        12       |
 ----------------------|:-----:|:-----:|:-----:|:------:|:-------:|:----------:|:---------------:|
 (3,6)-tight graphs    |   4   |   26  |  375  | 11 495 | 613 092 | 48 185 341 |  5 116 473 573  |
@@ -85,10 +88,12 @@ Exec. time (1 core)   |       |       |       |  50 ms |  1.7 s  |   3.8 min  | 
 ### (3/2,2)-tight graphs
 OEIS entry: [A233288](https://oeis.org/A233288 "Number of (3/2,2)-tight graphs with 2n vertices, or kinematic chains with 2n links.")<br/>
 Command: `geng $n -K3/2L2 -u`
-n                     |   2   |   4   |   6   |   8   |   10  |   12   |    14   |     16     |
-----------------------|:-----:|:-----:|:-----:|:-----:|:-----:|:------:|:-------:|:----------:|
-(3/2,2)-tight graphs  |   1   |   1   |   2   |   16  |  230  |  6 856 | 318 162 | 19 819 281 |
-Exec. time (1 core)   |       |       |       |       | 20 ms | 600 ms | 1.1 min |    3.4 h   |
+n                     |   2   |   4   |   6   |   8   |   10  |   12   |    14   |     16     |    18 (new)   |
+----------------------|:-----:|:-----:|:-----:|:-----:|:-----:|:------:|:-------:|:----------:|:-------------:|
+(3/2,2)-tight graphs  |   1   |   1   |   2   |   16  |  230  |  6 856 | 318 162 | 19 819 281 | 1 535 380 884 |
+Exec. time (1 core)   |       |       |       |       | 20 ms | 600 ms | 1.1 min |    3.4 h   |   30 days\*   |
+
+\* Total CPU time of 6 cores.
 
 
 ### Pseudoforests
@@ -104,7 +109,7 @@ Exec. time (1 core)    |  5.3 s  |   29 s  | 2.6 min |   15 min  |   1.3 h   |  
 OEIS entry: [A000055](https://oeis.org/A000055 "Number of trees with n unlabeled nodes.")<br/>
 Command: `geng $n -K1 -u`
 
-[Trees](https://en.wikipedia.org/wiki/Tree_(graph_theory)), minimally rigid graphs in 1D, are exactly the (1,1)-tight graphs.
+[Trees](https://en.wikipedia.org/wiki/Tree_(graph_theory)), minimally rigid graphs in 1D, are exactly the (1,1)-tight graphs. Note that this is a terribly inefficient way of generating trees, consider instead the Nauty program `gentreeg`.
 n                      |   15  |   16   |   17   |    18   |    19   |    20   |     21    |     22    |
 -----------------------|:-----:|:------:|:------:|:-------:|:-------:|:-------:|:---------:|:---------:|
 Trees                  | 7 741 | 19 320 | 48 629 | 123 867 | 317 955 | 823 065 | 2 144 505 | 5 623 756 |
