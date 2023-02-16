@@ -57,11 +57,11 @@ static const int MultiplyDeBruijnBitPosition[32] =
     if (tightkn == tightkd)                                                                       \
         tightkd = 1;                                                                              \
     else if (tightkd == 0)                                                                        \
-        gt_abort(">E geng: -K has to be an number\n");                                            \
+        gt_abort(">E geng: -K has to be a number\n");                                             \
     if (tightln == tightld)                                                                       \
         tightld = 1;                                                                              \
     else if (tightld == 0)                                                                        \
-        gt_abort(">E geng: -L has to be an number\n");                                            \
+        gt_abort(">E geng: -L has to be a number\n");                                             \
     if (!gotL)                                                                                    \
     {                                                                                             \
         tightln = tightkn * (tightkn + tightkd) / 2;                                              \
@@ -89,7 +89,10 @@ static const int MultiplyDeBruijnBitPosition[32] =
     }                                                                                             \
     else if (gotK)                                                                                \
     {                                                                                             \
-        prune = tightkn < 2 * tightkd ? prunetight : prunetight2;                                 \
+        if (tightkd == 1 && tightld == 1 && tightln >= 0 && tightln < 2 * tightkn)                \
+            prune = prunetightpebble;                                                             \
+        else                                                                                      \
+            prune = prunetightgray;                                                               \
     }                                                                                             \
     else                                                                                          \
     {                                                                                             \
@@ -230,6 +233,97 @@ inline boolean nxksrd(int n, int k, int *restrict A, int *restrict in, int *rest
     return FALSE;
 }
 
+int find_pebble(graph *d, int *pebbles, int n, setword *tovisit, int i)
+{
+    int j;
+    while (d[i] & *tovisit)
+    {
+        j = FIRSTBITNZ(d[i] & *tovisit);
+        *tovisit &= ~NTH_NODE(j);
+
+        if (pebbles[j] > 0)
+        {
+            pebbles[j]--;
+            d[i] &= ~NTH_NODE(j);
+            d[j] |= NTH_NODE(i);
+            return TRUE;
+        }
+        else if (find_pebble(d, pebbles, n, tovisit, j))
+        {
+            d[i] &= ~NTH_NODE(j);
+            d[j] |= NTH_NODE(i);
+            return TRUE;
+        }
+    }
+    return FALSE;
+}
+
+/* Determine whether the provided graph on n vertices is (k,l)-tight, (k,l)-sparse, or
+ * overconstrained.
+
+ * See Lee and Streinu (2008) Pebble game algorithms and sparse graphs
+ *
+ * Returns:
+ * <0 if the graph is overconstrained
+ * 0 if the graph is (k,l)-tight
+ * >0 if the graph is (k,l)-sparse
+ */
+int pebblegame(graph *g, int n, int k, int l)
+{
+    int i, j, total, needed;
+    int pebbles[MAXN];
+    setword tovisit, inittovisit;
+    graph d[MAXN] = {0};
+
+    for (i = 0; i < n; ++i)
+        pebbles[i] = k;
+
+    for (i = 0; i < n; ++i)
+    {
+        for (j = 0; j < i; ++j)
+        {
+            if ((g[i] & NTH_NODE(j)) == 0)
+                continue;
+
+            // (i,j) is an edge.
+            needed = l + 1 - pebbles[i] - pebbles[j];
+            inittovisit = ALLMASK(n) & ~NTH_NODE(i) & ~NTH_NODE(j);
+            tovisit = inittovisit;
+            while (needed > 0 && pebbles[i] < k && find_pebble(d, pebbles, n, &tovisit, i))
+            {
+                needed--;
+                pebbles[i]++;
+                tovisit = inittovisit;
+            }
+            tovisit = inittovisit;
+            while (needed > 0 && pebbles[j] < k && find_pebble(d, pebbles, n, &tovisit, j))
+            {
+                needed--;
+                pebbles[j]++;
+                tovisit = inittovisit;
+            }
+            if (needed > 0)
+                return -1;
+
+            if (pebbles[i] > pebbles[j])
+            {
+                pebbles[i]--;
+                d[i] |= NTH_NODE(j);
+            }
+            else
+            {
+                pebbles[j]--;
+                d[j] |= NTH_NODE(i);
+            }
+        }
+    }
+
+    total = 0;
+    for (i = 0; i < n; ++i)
+        total += pebbles[i];
+    return total - l;
+}
+
 /* dummy function when no pruning is applied */
 int nopruning(graph *g, int n, int maxn)
 {
@@ -237,8 +331,8 @@ int nopruning(graph *g, int n, int maxn)
 }
 
 /* remove graphs that are not (k,l)-sparse
- * seems to have better performance than prunetight2 for k < 2*/
-int prunetight(graph *g, int n, int maxn)
+ * seems to have better performance than prunetightgray for k < 2*/
+int prunetightcomb(graph *g, int n, int maxn)
 {
     int i, k, l, m;
     int nodeinds[MAXN];
@@ -293,8 +387,8 @@ int prunetight(graph *g, int n, int maxn)
 }
 
 /* remove graphs that are not (k,l)-sparse
- * seems to have better performance than prunetight for k >= 2*/
-int prunetight2(graph *g, int n, int maxn)
+ * seems to have better performance than prunetightcomb for k >= 2 */
+int prunetightgray(graph *g, int n, int maxn)
 {
     int i, j, m, k, l, degree;
     setword mask;
@@ -332,6 +426,30 @@ int prunetight2(graph *g, int n, int maxn)
             return TRUE;
     }
     return FALSE;
+}
+
+/* remove graphs that are not (k,l)-sparse
+ * seems to have better performance than prunetightcomb for k >= 2 */
+int prunetightpebble(graph *g, int n, int maxn)
+{
+    int i, j, m, k, l, degree;
+    setword mask;
+
+    /* small graphs are considered sparse */
+    if (n <= minn)
+        return FALSE;
+
+    /* find number of edges */
+    m = 0;
+    for (i = 0; i < n; ++i)
+        m += POPCOUNT(g[i]);
+    m = m / 2;
+
+    /* subgraph is overdetermined => not sparse */
+    if (TOO_MANY_EDGES(n, m))
+        return TRUE;
+
+    return pebblegame(g, n, tightkn, tightln) < 0;
 }
 
 /* remove graphs that cannot be constructed using Henneberg type I moves */
