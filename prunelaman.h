@@ -91,6 +91,8 @@ static const int MultiplyDeBruijnBitPosition[32] =
     {                                                                                             \
         if (tightkd == 1 && tightld == 1 && tightln >= 0 && tightln < 2 * tightkn)                \
             prune = prunetightpebble;                                                             \
+        else if (tightkn < 2 * tightkd)                                                           \
+            prune = prunetightcomb;                                                               \
         else                                                                                      \
             prune = prunetightgray;                                                               \
     }                                                                                             \
@@ -331,7 +333,7 @@ int nopruning(graph *g, int n, int maxn)
 }
 
 /* remove graphs that are not (k,l)-sparse
- * seems to have better performance than prunetightgray for k < 2*/
+ * seems to have better performance than prunetightgray for k < 2 */
 int prunetightcomb(graph *g, int n, int maxn)
 {
     int i, k, l, m;
@@ -429,7 +431,7 @@ int prunetightgray(graph *g, int n, int maxn)
 }
 
 /* remove graphs that are not (k,l)-sparse
- * seems to have better performance than prunetightcomb for k >= 2 */
+ * performs much better than the other methods for integer k and l such that 0 <= l < 2k */
 int prunetightpebble(graph *g, int n, int maxn)
 {
     int i, j, m, k, l, degree;
