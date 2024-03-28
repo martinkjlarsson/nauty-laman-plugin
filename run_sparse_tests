@@ -1,0 +1,52 @@
+#!/bin/bash
+#
+# Run exhaustive sparsity tests for ranges of K, L, and N.
+
+GREEN='\033[0;32m'
+RED='\033[0;31m'
+NC='\033[0m'
+
+if [ ! -f geng ]
+then
+    printf "${RED}FAILED${NC}\tPlease compile geng before running these tests\n"
+    exit 1
+fi
+if [ ! -f filter_sparse ]
+then
+    printf "${RED}FAILED${NC}\tPlease compile filter_sparse before running these tests\n"
+    exit 1
+fi
+
+
+for K in {1..3}
+do
+    for L in {0..10}
+    do
+        for N in {2..5}
+        do
+            for n in {1..8}
+            do
+                A=$(./geng $n 0:999 -K$K -L$L -N$N 2> /dev/null | wc -l)
+                B=$(./geng $n 2> /dev/null | ./filter_sparse $K $L $N 2> /dev/null | wc -l)
+
+                if [ $A -ne $B ]
+                then
+                    printf "./geng $n 0:999 -K${K}L${L}N${N}\t"
+                    printf "${RED}FAILED${NC}\tExpected $B but got $A\n"
+                    exit 1
+                fi
+            done
+            printf "./geng n 0:999 -K${K}L${L}N${N}\t"
+            printf "${GREEN}OK${NC}\n"
+        done
+    done
+done
+
+diff <(echo "cookie") <(echo "cookie") > /dev/null
+if [ $? -ne 0 ]; then
+    printf "${RED}FAILED${NC}\tFailed tests for (K,L,N)=(?,?,?)\n"
+    exit 1
+fi
+
+printf "\n${GREEN}PASSED ALL TESTS${NC}\n\n"
+exit 0
