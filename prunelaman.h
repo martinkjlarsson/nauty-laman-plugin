@@ -35,102 +35,118 @@ static const int MultiplyDeBruijnBitPosition[32] =
 /* Parse plugin arguments. */
 #ifdef INT_KL
 #define TOO_MANY_EDGES(n, m) ((m) > tightkn * (n)-tightln)
-#define PLUGIN_SWITCHES else SWLONG('K', gotK, tightkn, "geng -K") else SWLONG('L', gotL, tightln, "geng -L") else SWBOOLEAN('H', henneberg1) else SWINT('N', gotN, minn, "geng -N")
+#define PLUGIN_SWITCHES else SWINT('K', gotK, tightkn, "geng -K") else SWINT('L', gotL, tightln, "geng -L") else SWBOOLEAN('H', henneberg1) else SWINT('N', gotN, minn, "geng -N")
+#define PRINT_LAMAN_MESSAGE fprintf(stderr, ">A Laman plugin -K%dL%dN%d\n", tightkn, tightln, minn);
 #else
 #define TOO_MANY_EDGES(n, m) (tightkd * tightld * (m) > tightkn * tightld * (n)-tightln * tightkd)
 #define PLUGIN_SWITCHES else SWRANGE('K', "/", gotK, tightkn, tightkd, "geng -K") else SWRANGE('L', "/", gotL, tightln, tightld, "geng -L") else SWBOOLEAN('H', henneberg1) else SWINT('N', gotN, minn, "geng -N")
+#define PRINT_LAMAN_MESSAGE                                                        \
+    if (tightkd == 1 && tightld == 1)                                              \
+        fprintf(stderr, ">A Laman plugin -K%ldL%ldN%d\n", tightkn, tightln, minn); \
+    else                                                                           \
+        fprintf(stderr, ">A Laman plugin -K%ld/%ldL%ld/%ldN%d\n", tightkn, tightkd, tightln, tightld, minn);
 #endif
 
 /* Note: PLUGIN_INIT happens after validation of the input arguments in geng.c.
  * Beware of illegal argument combinations. */
-#define PLUGIN_INIT                                                                               \
-    if (tightkd < 0)                                                                              \
-    {                                                                                             \
-        tightkn = -tightkn;                                                                       \
-        tightkd = -tightkd;                                                                       \
-    }                                                                                             \
-    if (tightld < 0)                                                                              \
-    {                                                                                             \
-        tightln = -tightln;                                                                       \
-        tightld = -tightld;                                                                       \
-    }                                                                                             \
-    if (tightkn == tightkd)                                                                       \
-        tightkd = 1;                                                                              \
-    else if (tightkd == 0)                                                                        \
-        gt_abort(">E geng: -K has to be a number\n");                                             \
-    if (tightln == tightld)                                                                       \
-        tightld = 1;                                                                              \
-    else if (tightld == 0)                                                                        \
-        gt_abort(">E geng: -L has to be a number\n");                                             \
-    if (!gotL)                                                                                    \
-    {                                                                                             \
-        tightln = tightkn * (tightkn + tightkd) / 2;                                              \
-        tightld = tightkd * tightkd;                                                              \
-    }                                                                                             \
-    if (!gotN)                                                                                    \
-    {                                                                                             \
-        minn = tightkn / tightkd;                                                                 \
-        if (minn < 2)                                                                             \
-            minn = 2;                                                                             \
-        while (!TOO_MANY_EDGES(minn + 1, minn * (minn + 1) / 2))                                  \
-            minn++;                                                                               \
-    }                                                                                             \
-    else if (minn < 2)                                                                            \
-    {                                                                                             \
-        gt_abort(">E geng: -N has to be at least 2\n");                                           \
-    }                                                                                             \
-    if (henneberg1)                                                                               \
-    {                                                                                             \
-        prune = prunehenneberg1;                                                                  \
-        if (tightkd != 1)                                                                         \
-            gt_abort(">E geng: -K has to be an integer\n");                                       \
-        if (gotd || gote || gotL)                                                                 \
-            gt_abort(">E geng: -deK are incompatible with -H\n");                                 \
-    }                                                                                             \
-    else if (gotK)                                                                                \
-    {                                                                                             \
-        if (tightkd == 1 && tightld == 1 && tightln >= 0 && tightln < 2 * tightkn)                \
-            prune = prunetightpebble;                                                             \
-        else if (tightkn < 2 * tightkd)                                                           \
-            prune = prunetightcomb;                                                               \
-        else                                                                                      \
-            prune = prunetightgray;                                                               \
-    }                                                                                             \
-    else                                                                                          \
-    {                                                                                             \
-        prune = nopruning;                                                                        \
-        if (gotL)                                                                                 \
-            gt_abort(">E geng: -K is required when providing -L\n");                              \
-    }                                                                                             \
-    if (henneberg1 || gotK)                                                                       \
-    {                                                                                             \
-        int maxtightedges = (tightkn * tightld * maxn - tightln * tightkd) / (tightkd * tightld); \
-        if (maxn <= minn)                                                                         \
-            maxtightedges = maxn * (maxn - 1) / 2;                                                \
-        if (!gote)                                                                                \
-            geng_mine = geng_maxe = mine = maxe = maxtightedges;                                  \
-        else if (maxe > maxtightedges)                                                            \
-            geng_maxe = maxe = maxtightedges;                                                     \
-        if (!gotd && !gote && maxn > tightkn / tightkd)                                           \
-            geng_mindeg = mindeg = tightkn / tightkd;                                             \
-        if (!quiet)                                                                               \
-        {                                                                                         \
-            if (tightkd != 1 || tightld != 1)                                                     \
-                fprintf(stderr, ">A Laman plugin -K%ld/%ldL%ld/%ldN%d\n",                         \
-                        tightkn, tightkd, tightln, tightld, minn);                                \
-            else                                                                                  \
-                fprintf(stderr, ">A Laman plugin -K%ldL%ldN%d\n", tightkn, tightln, minn);        \
-        }                                                                                         \
+#define PLUGIN_INIT                                                                                       \
+    if (tightkn == tightkd)                                                                               \
+        tightkd = 1;                                                                                      \
+    else if (tightkd == 0)                                                                                \
+        gt_abort(">E geng: -K has to be a number\n");                                                     \
+    if (tightln == tightld)                                                                               \
+        tightld = 1;                                                                                      \
+    else if (tightld == 0)                                                                                \
+        gt_abort(">E geng: -L has to be a number\n");                                                     \
+    if (tightkd < 0)                                                                                      \
+    {                                                                                                     \
+        tightkn = -tightkn;                                                                               \
+        tightkd = -tightkd;                                                                               \
+    }                                                                                                     \
+    if (tightld < 0)                                                                                      \
+    {                                                                                                     \
+        tightln = -tightln;                                                                               \
+        tightld = -tightld;                                                                               \
+    }                                                                                                     \
+    if (!gotL)                                                                                            \
+    {                                                                                                     \
+        if (tightkd & 1)                                                                                  \
+        {                                                                                                 \
+            tightln = tightkn * (tightkn + tightkd) / 2;                                                  \
+            tightld = tightkd * tightkd;                                                                  \
+        }                                                                                                 \
+        else                                                                                              \
+        {                                                                                                 \
+            tightln = tightkn * (tightkn + tightkd);                                                      \
+            tightld = 2 * tightkd * tightkd;                                                              \
+        }                                                                                                 \
+    }                                                                                                     \
+    if (gotN)                                                                                             \
+    {                                                                                                     \
+        if (minn < 2)                                                                                     \
+            gt_abort(">E geng: -N has to be at least 2\n");                                               \
+    }                                                                                                     \
+    else                                                                                                  \
+    {                                                                                                     \
+        minn = tightkn / tightkd;                                                                         \
+        if (minn < 2)                                                                                     \
+            minn = 2;                                                                                     \
+        while (!TOO_MANY_EDGES(minn + 1, minn * (minn + 1) / 2))                                          \
+            minn++;                                                                                       \
+    }                                                                                                     \
+    if (henneberg1)                                                                                       \
+    {                                                                                                     \
+        prune = prunehenneberg1;                                                                          \
+        if (tightkd != 1)                                                                                 \
+            gt_abort(">E geng: -K has to be an integer\n");                                               \
+        if (gotd || gote || gotL)                                                                         \
+            gt_abort(">E geng: -deL are incompatible with -H\n");                                         \
+    }                                                                                                     \
+    else if (gotK)                                                                                        \
+    {                                                                                                     \
+        if (tightkd == 1 && tightld == 1 && tightln >= 0 && tightln < 2 * tightkn && minn <= tightkn + 1) \
+            prune = prunetightpebble;                                                                     \
+        else if (tightkn < 2 * tightkd)                                                                   \
+            prune = prunetightcomb;                                                                       \
+        else                                                                                              \
+            prune = prunetightgray;                                                                       \
+    }                                                                                                     \
+    else                                                                                                  \
+    {                                                                                                     \
+        prune = nopruning;                                                                                \
+        if (gotL)                                                                                         \
+            gt_abort(">E geng: -K is required when providing -L\n");                                      \
+    }                                                                                                     \
+    if (henneberg1 || gotK)                                                                               \
+    {                                                                                                     \
+        int maxtightedges = (tightkn * tightld * maxn - tightln * tightkd) / (tightkd * tightld);         \
+        if (maxn <= minn)                                                                                 \
+            maxtightedges = maxn * (maxn - 1) / 2;                                                        \
+        if (!gote)                                                                                        \
+            geng_mine = geng_maxe = mine = maxe = maxtightedges;                                          \
+        else if (maxe > maxtightedges)                                                                    \
+            geng_maxe = maxe = maxtightedges;                                                             \
+        if (!gotd && !gote && maxn > tightkn / tightkd)                                                   \
+            geng_mindeg = mindeg = tightkn / tightkd;                                                     \
+        if (!quiet)                                                                                       \
+            PRINT_LAMAN_MESSAGE                                                                           \
     }
 
 static int (*prune)(graph *, int, int);
 static boolean gotK = FALSE;
 static boolean gotL = FALSE;
 static boolean gotN = FALSE;
+#ifdef INT_KL
+static int tightkn = 2; /* Specifies k for (k,l)-tight graphs. */
+static int tightkd = 1;
+static int tightln = 3; /* Specifies l for (k,l)-tight graphs. */
+static int tightld = 1;
+#else
 static long tightkn = 2; /* Specifies k for (k,l)-tight graphs. */
 static long tightkd = 1;
 static long tightln = 3; /* Specifies l for (k,l)-tight graphs. */
 static long tightld = 1;
+#endif
 static int minn = 2;
 static boolean henneberg1 = FALSE;
 static nauty_counter total_number_of_graphs = 0;
@@ -448,7 +464,7 @@ int prunetightpebble(graph *g, int n, int maxn)
     m = m / 2;
 
     /* subgraph is overdetermined => not sparse */
-    if (TOO_MANY_EDGES(n, m))
+    if (m > tightkn * n - tightln)
         return TRUE;
 
     return pebblegame(g, n, tightkn, tightln) < 0;

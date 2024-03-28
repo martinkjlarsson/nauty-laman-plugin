@@ -56,8 +56,6 @@ int main(int argc, const char *argv[])
 
     if (K < 1)
         gt_abort(">E filter_sparse: K has to be a positive integer\n");
-    if (L < 0)
-        gt_abort(">E filter_sparse: L has to be a non-negative integer\n");
     if (N < 1)
         gt_abort(">E filter_sparse: N has to be a positive integer\n");
 
