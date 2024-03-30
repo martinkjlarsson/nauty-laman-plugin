@@ -1,7 +1,5 @@
 /* Copyright (c) 2020 Martin Larsson */
 
-/* Add this flag when compiling geng: -D'PLUGIN="prunelaman.h"' */
-
 /* Using rationals for (k,l) comes with a small overhead. Define this macro to use integers for (k,l). */
 // #define INT_KL
 
@@ -35,11 +33,12 @@ static const int MultiplyDeBruijnBitPosition[32] =
 /* Parse plugin arguments. */
 #ifdef INT_KL
 #define TOO_MANY_EDGES(n, m) ((m) > tightkn * (n)-tightln)
-#define PLUGIN_SWITCHES else SWINT('K', gotK, tightkn, "geng -K") else SWINT('L', gotL, tightln, "geng -L") else SWBOOLEAN('H', henneberg1) else SWINT('N', gotN, minn, "geng -N")
+#define PLUGIN_SWITCHES else SWINT('K', gotK, tightkn, "gensparseg -K") else SWINT('L', gotL, tightln, "gensparseg -L") else SWBOOLEAN('H', henneberg1) else SWINT('N', gotN, minn, "gensparseg -N")
 #define PRINT_LAMAN_MESSAGE fprintf(stderr, ">A Laman plugin -K%dL%dN%d\n", tightkn, tightln, minn);
 #else
 #define TOO_MANY_EDGES(n, m) (tightkd * tightld * (m) > tightkn * tightld * (n)-tightln * tightkd)
-#define PLUGIN_SWITCHES else SWRANGE('K', "/", gotK, tightkn, tightkd, "geng -K") else SWRANGE('L', "/", gotL, tightln, tightld, "geng -L") else SWBOOLEAN('H', henneberg1) else SWINT('N', gotN, minn, "geng -N")
+#define PLUGIN_SWITCHES else SWRANGE('K', "/", gotK, tightkn, tightkd, "gensparseg -K") else SWRANGE('L', "/", gotL, tightln, tightld, "gensparseg -L") else SWBOOLEAN('H', henneberg1) else SWINT('N', gotN, minn, "gensparseg -N")
+
 #define PRINT_LAMAN_MESSAGE                                                        \
     if (tightkd == 1 && tightld == 1)                                              \
         fprintf(stderr, ">A Laman plugin -K%ldL%ldN%d\n", tightkn, tightln, minn); \
@@ -53,11 +52,11 @@ static const int MultiplyDeBruijnBitPosition[32] =
     if (tightkn == tightkd)                                                                               \
         tightkd = 1;                                                                                      \
     else if (tightkd == 0)                                                                                \
-        gt_abort(">E geng: -K has to be a number\n");                                                     \
+        gt_abort(">E gensparseg: -K has to be a number\n");                                               \
     if (tightln == tightld)                                                                               \
         tightld = 1;                                                                                      \
     else if (tightld == 0)                                                                                \
-        gt_abort(">E geng: -L has to be a number\n");                                                     \
+        gt_abort(">E gensparseg: -L has to be a number\n");                                               \
     if (tightkd < 0)                                                                                      \
     {                                                                                                     \
         tightkn = -tightkn;                                                                               \
@@ -84,7 +83,7 @@ static const int MultiplyDeBruijnBitPosition[32] =
     if (gotN)                                                                                             \
     {                                                                                                     \
         if (minn < 2)                                                                                     \
-            gt_abort(">E geng: -N has to be at least 2\n");                                               \
+            gt_abort(">E gensparseg: -N has to be at least 2\n");                                         \
     }                                                                                                     \
     else                                                                                                  \
     {                                                                                                     \
@@ -98,9 +97,9 @@ static const int MultiplyDeBruijnBitPosition[32] =
     {                                                                                                     \
         prune = prunehenneberg1;                                                                          \
         if (tightkd != 1)                                                                                 \
-            gt_abort(">E geng: -K has to be an integer\n");                                               \
+            gt_abort(">E gensparseg: -K has to be an integer\n");                                         \
         if (gotd || gote || gotL)                                                                         \
-            gt_abort(">E geng: -deL are incompatible with -H\n");                                         \
+            gt_abort(">E gensparseg: -deL are incompatible with -H\n");                                   \
     }                                                                                                     \
     else if (gotK)                                                                                        \
     {                                                                                                     \
@@ -115,7 +114,7 @@ static const int MultiplyDeBruijnBitPosition[32] =
     {                                                                                                     \
         prune = nopruning;                                                                                \
         if (gotL)                                                                                         \
-            gt_abort(">E geng: -K is required when providing -L\n");                                      \
+            gt_abort(">E gensparseg: -K is required when providing -L\n");                                \
     }                                                                                                     \
     if (henneberg1 || gotK)                                                                               \
     {                                                                                                     \

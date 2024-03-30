@@ -4,14 +4,10 @@
     Filter graphs to keep the ones that are (K,L)-sparse. A graph is (K,L)-
     sparse if every subgraph with n > N vertices has at most Kn-L edges, and
     (K,L)-tight if it is (K,L)-sparse and has exactly Kn-L edges.
-    -u suppresses the ouput and only counts the sparse graphs.
+    -u suppresses the output and only counts the sparse graphs.
 */
 
-// gcc -O4 -mpopcnt -march=native filter_sparse.c ../nauty27r3/gtools.c -o filter_sparse
-
-#define MAXN 32
-
-#include "../nauty27r3/gtools.h"
+#include "gtools.h"
 
 #define NTH_NODE(n) (bit[n])
 #define CTZ(x) __builtin_ctz(x)
@@ -25,6 +21,10 @@ boolean is_sparse(graph *g, int n, int K, int L, int N)
     sn = 0;
     sm = 0;
 
+    /* Go through all subgraphs verifying sparsity. We use the Gray code binary
+     * representation of i as a mask for which nodes are included in the
+     * subgraph. This way, in every iteration, we either add or remove a single
+     * node to the previous subgraph. */
     for (i = 1; i < (1 << n); ++i)
     {
         j = CTZ(i);
@@ -46,6 +46,12 @@ int main(int argc, const char *argv[])
     char *line;
     size_t size;
     boolean nooutput;
+
+    if (argc >= 2 && strcmp(argv[1], "-h") == 0)
+    {
+        printf("Usage: filter_sparse K L N [-u]\n");
+        return 0;
+    }
 
     if (argc < 4)
         gt_abort(">E filter_sparse: K, L, and N are mandatory arguments\n");

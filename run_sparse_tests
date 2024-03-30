@@ -6,9 +6,9 @@ GREEN='\033[0;32m'
 RED='\033[0;31m'
 NC='\033[0m'
 
-if [ ! -f geng ]
+if [ ! -f gensparseg ]
 then
-    printf "${RED}FAILED${NC}\tPlease compile geng before running these tests\n"
+    printf "${RED}FAILED${NC}\tPlease compile gensparseg before running these tests\n"
     exit 1
 fi
 if [ ! -f filter_sparse ]
@@ -26,17 +26,17 @@ do
         do
             for n in {1..8}
             do
-                A=$(./geng $n 0:999 -K$K -L$L -N$N 2> /dev/null | wc -l)
-                B=$(./geng $n 2> /dev/null | ./filter_sparse $K $L $N 2> /dev/null | wc -l)
+                A=$(./gensparseg $n 0:999 -K$K -L$L -N$N 2> /dev/null | wc -l)
+                B=$(./gensparseg $n 2> /dev/null | ./filter_sparse $K $L $N 2> /dev/null | wc -l)
 
                 if [ $A -ne $B ]
                 then
-                    printf "./geng $n 0:999 -K${K}L${L}N${N}\t"
+                    printf "./gensparseg $n 0:999 -K${K}L${L}N${N}\t"
                     printf "${RED}FAILED${NC}\tExpected $B but got $A\n"
                     exit 1
                 fi
             done
-            printf "./geng n 0:999 -K${K}L${L}N${N}\t"
+            printf "./gensparseg n 0:999 -K${K}L${L}N${N}\t"
             printf "${GREEN}OK${NC}\n"
         done
     done

@@ -6,9 +6,9 @@ GREEN='\033[0;32m'
 RED='\033[0;31m'
 NC='\033[0m'
 
-if [ ! -f geng ]
+if [ ! -f gensparseg ]
 then
-    printf "${RED}FAILED${NC}\tPlease compile geng before running these tests\n"
+    printf "${RED}FAILED${NC}\tPlease compile gensparseg before running these tests\n"
     exit 1
 fi
 
@@ -18,8 +18,8 @@ test()
 {
     for i in ${!exp[@]}
     do
-        printf "./geng ${n[$i]} $* \t"
-        local v=$(./geng ${n[$i]} "$@" 2> /dev/null | wc -l)
+        printf "./gensparseg ${n[$i]} $* \t"
+        local v=$(./gensparseg ${n[$i]} "$@" 2> /dev/null | wc -l)
         if [ "$v" -eq "${exp[$i]}" ]
         then
             printf "${GREEN}OK${NC}\n"

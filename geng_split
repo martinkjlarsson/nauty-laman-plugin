@@ -1,33 +1,33 @@
 #!/bin/bash
 #
-# Split generation over multiple parallel instances of geng.
+# Split generation over multiple parallel instances of gensparseg.
 #
 # Arguments:
-#   Number of instances of geng to start.
-#   Arguments to pass to geng.
+#   Number of instances of gensparseg to start.
+#   Arguments to pass to gensparseg.
 #
 # Example:
-#   Count the number of Laman graphs on 11 vertices using 4 parallel instances of geng
+#   Count the number of Laman graphs on 11 vertices using 4 parallel instances
 #   ./geng_split 4 11 -K2 | wc -l
 
-mod=${1:?"Please specify the number of instances of geng to start"}
+mod=${1:?"Please specify the number of instances of gensparseg to start"}
 physical_cores=$(grep ^cpu\\scores /proc/cpuinfo | uniq |  awk '{print $4}' );
 logical_cores=$(grep -c ^processor /proc/cpuinfo)
 
 if [[ "$*" != *q* ]]
 then
-    1>&2 echo ">A Starting $mod instances of geng on a processor with $physical_cores cores/$logical_cores threads"
+    1>&2 echo ">A Starting $mod instances of gensparseg on a processor with $physical_cores cores/$logical_cores threads"
 fi
 
 # Kill any started instances in case we get killed.
 trap 'jobs -p | xargs -r kill' EXIT
 
-# Start multiple parallel instances of geng.
+# Start multiple parallel instances of gensparseg.
 for i in $(seq 1 $mod)
 do
     let rem=$i-1
     let x=1000*$mod
-    ./geng "${@:2}" $rem/$mod -x${x}X1  &
+    ./gensparseg "${@:2}" $rem/$mod -x${x}X1  &
     pids[${i}]=$!
 done
 

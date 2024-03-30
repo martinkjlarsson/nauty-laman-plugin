@@ -3,32 +3,38 @@
     See help text for details: filter_rank -h
 
     This program uses Eigen (https://eigen.tuxfamily.org/). Provide the appropriate
-    include flags when compiling. For example:
-    g++ -O4 -march=native filter_rank.cpp -I<path to eigen> -o filter_rank
+    include flags when compiling.
 
     Examples:
-        ./geng 8 -K3 | ./filter_rank -u
-        >A Laman plugin -K3L6N4
-        >A ./geng -d3D7 n=8 e=18
-        >Z 375 graphs generated in 0.00 sec
-        >Z 374 graphs passed rank filter 0.01 sec
+        Count all rigid (3,6)-tight graphs of order 8:
+            ./gensparseg 8 -K3 | ./filter_rank -u
+            >A Laman plugin -K3L6N4
+            >A ./gensparseg -d3D7 n=8 e=18
+            >Z 375 graphs generated in 0.00 sec
+            >Z 374 graphs passed rank filter in 0.01 sec
 
-        ./geng 9 -K3 | ./filter_rank -cp
-        >A Laman plugin -K3L6N4
-        >A ./geng -d3D8 n=9 e=21
-        >Z 11495 graphs generated in 0.02 sec
-        HCQRV~} 1
-        HCQrU~} 1
-        HCXmd}} 1
-        HCdbF~} 1
-        HCdbNz} 1
-        HCdbM~} 1
-        HQhTVz{ 1
-        HQhTVzu 1
-        >Z 8 graphs passed rank filter 0.21 sec
+        Find all flexible (3,6)-tight graphs of order 9:
+            ./gensparseg 9 -K3 | ./filter_rank -cp
+            >A Laman plugin -K3L6N4
+            >A ./gensparseg -d3D8 n=9 e=21
+            >Z 11495 graphs generated in 0.01 sec
+            HCQRV~} 1
+            HCQrU~} 1
+            HCXmd}} 1
+            HCdbF~} 1
+            HCdbNz} 1
+            HCdbM~} 1
+            HQhTVz{ 1
+            HQhTVzu 1
+            >Z 8 graphs passed rank filter in 0.12 sec
 
-        ./geng 11 -K3 | ./filter_rank 3 2
-        TODO: output...
+        Find all flexible (3,6)-tight graphs of order 11 with two degrees of freedom:
+            ./gensparseg 11 -K3 | ./filter_rank 3 2
+            >A Laman plugin -K3L6N4
+            >A ./gensparseg -d3D10 n=11 e=27
+            JCOcaOc~~~?
+            >Z 48185341 graphs generated in 208.37 sec
+            >Z 1 graphs passed rank filter in 710.35 sec
 */
 
 #include <exception>
@@ -259,6 +265,6 @@ int main(int argc, const char *argv[])
     clock_t c_end = clock();
     double time = double(c_end - c_start) / CLOCKS_PER_SEC;
     cerr.precision(2);
-    cerr << ">Z " << count << " graphs passed rank filter " << fixed << time << " sec" << endl;
+    cerr << ">Z " << count << " graphs passed rank filter in " << fixed << time << " sec" << endl;
     return 0;
 }
