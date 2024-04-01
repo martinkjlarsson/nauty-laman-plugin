@@ -23,10 +23,6 @@ static const int MultiplyDeBruijnBitPosition[32] =
 // #define CTZ(x) (ffs(x) - 1) // This is ridiculously slow...
 #endif
 
-/* Uncomment to enable status reports to stderr. This will disable any other
- * output options -uyngs. */
-// #define OUTPROC countgraphs
-
 /* Pruning function. */
 #define PRUNE (*prune)
 
@@ -148,22 +144,6 @@ static long tightld = 1;
 #endif
 static int minn = 2;
 static boolean henneberg1 = FALSE;
-static nauty_counter total_number_of_graphs = 0;
-
-/* If OUTPROC is defined as above, this gets called whenever a new graph has
- * been generated. Instead of outputting to file this procedure simply counts
- * the graphs and provides a status report every now and then. */
-void countgraphs(FILE *f, graph *g, int n)
-{
-    ++total_number_of_graphs;
-    /* report number of graphs generated approximately every hour */
-    if ((total_number_of_graphs & (1 << 40 - n) - 1) == 0)
-    {
-        fprintf(stderr, ">A " COUNTER_FMT " graphs generated\n",
-                total_number_of_graphs);
-        fflush(stderr);
-    }
-}
 
 /* Generates the next combination of k items from n possible ones, i.e., the
  * next k-subset of an n-set. If A is initialized with the items 0..k-1,
