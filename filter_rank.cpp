@@ -109,7 +109,7 @@ Graph parse_graph6(string graph6)
             if (data & (1 << bit_index))
             {
                 // Edge (i,j) exists.
-                g.edge_list.push_back(Edge(i, j));
+                g.edge_list.emplace_back(i, j);
             }
             bit_index--;
         }
@@ -134,8 +134,7 @@ int rigidity_rank(const Graph &g, int dim)
         R.block<1, Dynamic>(i, dim * e.d, 1, dim) = -v;
     }
 
-    // JacobiSVD<MatrixXd> decomp(R); // Slower than Julia.
-    ColPivHouseholderQR<MatrixXd> decomp(R); // Faster than Julia.
+    ColPivHouseholderQR<MatrixXd> decomp(R);
     return decomp.rank();
 }
 
@@ -258,7 +257,7 @@ int main(int argc, const char *argv[])
                     for (int edof : excessive_dof)
                         cout << ' ' << edof;
                 }
-                cout << endl;
+                cout << '\n';
             }
         }
     }

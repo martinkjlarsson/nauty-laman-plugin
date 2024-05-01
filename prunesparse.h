@@ -34,7 +34,6 @@ static const int MultiplyDeBruijnBitPosition[32] =
 #else
 #define TOO_MANY_EDGES(n, m) (tightkd * tightld * (m) > tightkn * tightld * (n)-tightln * tightkd)
 #define PLUGIN_SWITCHES else SWRANGE('K', "/", gotK, tightkn, tightkd, "gensparseg -K") else SWRANGE('L', "/", gotL, tightln, tightld, "gensparseg -L") else SWBOOLEAN('H', henneberg1) else SWINT('N', gotN, minn, "gensparseg -N")
-
 #define PRINT_LAMAN_MESSAGE                                                        \
     if (tightkd == 1 && tightld == 1)                                              \
         fprintf(stderr, ">A Laman plugin -K%ldL%ldN%d\n", tightkn, tightln, minn); \
