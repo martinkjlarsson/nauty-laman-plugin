@@ -1,6 +1,5 @@
 # Nauty Laman plugin
-A plugin for the utility program `geng` provided with [nauty](http://pallini.di.uniroma1.it/) that enables quick generation of nonisomorphic [sparse and tight graphs](https://en.wikipedia.org/wiki/Dense_graph#Sparse_and_tight_graphs).
-
+A plugin for the utility program `geng` provided with [nauty](http://pallini.di.uniroma1.it/) that enables quick generation of nonisomorphic [sparse and tight graphs](https://en.wikipedia.org/wiki/Dense_graph#Sparse_and_tight_graphs). A graph is (k,l)-sparse if every subgraph with n > N vertices has at most kn-l edges, and (k,l)-tight if it is (k,l)-sparse and has exactly kn-L edges.
 
 ## Installation
 1. Download and build [nauty](http://pallini.di.uniroma1.it/).
@@ -21,11 +20,11 @@ The compiled binary `gensparseg` adds a few new parameters to `geng`:
 * `-H`: generate (k,l)-tight graphs constructible by [Henneberg type I moves](https://en.wikipedia.org/wiki/Laman_graph#Henneberg_construction). k defaults to 2 but can be set using `-K#`. l is always k(k+1)/2.
 * `-N#`: all (complete graps) graphs with this number of nodes or fewer are considered (tight) sparse. The default value is max(⌊k⌋,2) or the highest n such that a complete graph on n vertices satisfies the sparsity condition.
 
-Both `-K` and `-L` accept rational numbers making it possible to generate, e.g., (3/2,2)-tight graphs (see results below). Note, however, that denominators equal to their numerator are ignored, e.g., `-K2/2` is equivalent to `-K2`. If rational arguments are not needed, define the macro `INT_KL` before compiling for a small increase (~15 %) in performance.
+Both `-K` and `-L` accept rational numbers making it possible to generate, e.g., (3/2,2)-tight graphs (see results below). Note, however, that denominators equal to their numerator are ignored, e.g., `-K2/2` is equivalent to `-K2`. If rational arguments are not needed, define the macro `INT_KL` before compiling for a small increase (~15% for some inputs) in performance.
 
 
 ## Algorithm
-For integers k and l satisfying 0 ≤ l < 2k, the pebble game algorithm presented in [Lee and Streinu (2008) Pebble game algorithms and sparse graphs](https://www.sciencedirect.com/science/article/pii/S0012365X07005602) is used. For all other cases, a naive method checking the sparsity of every subgraph is used. However, due to how `geng` generates the graphs, even this naive approach is fast.
+For integers k and l satisfying 0 ≤ l < 2k and N ≤ k+1, the pebble game algorithm presented in [Lee and Streinu (2008) Pebble game algorithms and sparse graphs](https://www.sciencedirect.com/science/article/pii/S0012365X07005602) is used. For all other cases, a naive method checking the sparsity of every subgraph is used. However, due to how `geng` generates the graphs, even this naive approach is fast.
 
 
 ## Results - counts and execution times
@@ -87,14 +86,14 @@ Note that `gensparseg` can generate (3/2,2)-tight graphs also for odd orders n.
 n                     |   2   |   4   |   6   |   8   |   10  |   12   |    14   |     16     |    18 (new)   |
 ----------------------|:-----:|:-----:|:-----:|:-----:|:-----:|:------:|:-------:|:----------:|:-------------:|
 (3/2,2)-tight graphs  |   1   |   1   |   2   |   16  |  230  |  6 856 | 318 162 | 19 819 281 | 1 535 380 884 |
-Execution time        |       |       |       |       | 10 ms | 360 ms |   39 s  |    1.9 h   |   22 days\*   |
-
-\* Total CPU time of 32 cores.
+Execution time        |       |       |       |       | 10 ms | 360 ms |   39 s  |    1.9 h   |    20 days    |
 
 
 ### Pseudoforests
 OEIS entry: [A134964](https://oeis.org/A134964 "Number of different unlabeled n-node graphs with at most one cycle in each connected component.")<br/>
 Command: `gensparseg $n 0:999 -K1L0 -u`
+
+[Pseudoforests](https://en.wikipedia.org/wiki/Pseudoforest) are the (1,0)-sparse graphs.
 n                      |    15   |    16   |     17    |     18    |     19     |     20     |      21     |
 -----------------------|:-------:|:-------:|:---------:|:---------:|:----------:|:----------:|:-----------:|
 Pseudoforests          | 282 693 | 793 697 | 2 237 982 | 6 335 978 | 17 992 622 | 51 235 887 | 146 228 734 |
